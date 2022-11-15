@@ -61,3 +61,21 @@ java_library {
     java_version: "1.8",
     sdk_version: "current",
 }
+
+
+java_library {
+    name: "truth-liteproto-extension",
+    host_supported: true,
+    srcs: ["extensions/liteproto/src/main/java/**/*.java"],
+    libs: [
+        "auto_value_annotations",
+        "error_prone_annotations",
+        "guava-android-annotation-stubs",
+        "truth",
+    ],
+    static_libs: [
+        "guava",
+        "libprotobuf-java-lite",
+    ],
+    sdk_version: "current",
+}
