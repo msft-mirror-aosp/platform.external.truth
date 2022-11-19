@@ -43,6 +43,11 @@ java_library {
     ],
     plugins: ["auto_value_plugin"],
     sdk_version: "current",
+    errorprone: {
+        javacflags: [
+            "-Xep:NoCanIgnoreReturnValueOnClasses:WARN",
+        ],
+    },
 }
 
 java_library {
