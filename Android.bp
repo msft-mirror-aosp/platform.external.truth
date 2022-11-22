@@ -39,10 +39,19 @@ java_library {
     ],
     static_libs: [
         "guava",
-        "asm-9.2",
     ],
     plugins: ["auto_value_plugin"],
     sdk_version: "current",
+    // Exclude the functionality that requires bytecode analysis on the device.
+    // Android does not use standard Java .class files.
+    target: {
+        android: {
+            exclude_srcs: ["core/src/main/java/com/google/common/truth/ActualValueInference.java"],
+        },
+        host: {
+            static_libs: ["ow2-asm"],
+        },
+    },
     errorprone: {
         javacflags: [
             "-Xep:NoCanIgnoreReturnValueOnClasses:WARN",
