@@ -29,7 +29,9 @@ import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import com.google.protobuf.Descriptors.FieldDescriptor;
 import com.google.protobuf.ExtensionRegistry;
 import com.google.protobuf.Message;
+import com.google.protobuf.TextFormat;
 import com.google.protobuf.TypeRegistry;
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.Comparator;
 import org.checkerframework.checker.nullness.qual.Nullable;
@@ -64,6 +66,7 @@ public class IterableOfProtosSubject<M extends Message> extends IterableSubject 
   private final FailureMetadata metadata;
   private final Iterable<M> actual;
   private final FluentEqualityConfig config;
+  private final TextFormat.Printer protoPrinter;
 
   protected IterableOfProtosSubject(
       FailureMetadata failureMetadata, @Nullable Iterable<M> messages) {
@@ -78,6 +81,28 @@ public class IterableOfProtosSubject<M extends Message> extends IterableSubject 
     this.metadata = failureMetadata;
     this.actual = messages;
     this.config = config;
+    this.protoPrinter = TextFormat.printer().usingTypeRegistry(config.useTypeRegistry());
+  }
+
+  @Override
+  protected String actualCustomStringRepresentation() {
+    if (actual == null) {
+      return "null";
+    }
+    StringBuilder sb = new StringBuilder().append('[');
+    boolean first = true;
+    for (M element : actual) {
+      if (!first) {
+        sb.append(", ");
+      }
+      first = false;
+      try {
+        protoPrinter.print(element, sb);
+      } catch (IOException impossible) {
+        throw new AssertionError(impossible);
+      }
+    }
+    return sb.append(']').toString();
   }
 
   /**
@@ -735,7 +760,7 @@ public class IterableOfProtosSubject<M extends Message> extends IterableSubject 
 
     @Override
     @CanIgnoreReturnValue
-    public Ordered containsExactly(/*@Nullable*/ M... expected) {
+    public Ordered containsExactly(@Nullable M... expected) {
       return delegate(Arrays.asList(expected)).containsExactly(expected);
     }
 
@@ -753,7 +778,7 @@ public class IterableOfProtosSubject<M extends Message> extends IterableSubject 
 
     @Override
     @CanIgnoreReturnValue
-    public Ordered containsAtLeast(@Nullable M first, @Nullable M second, /*@Nullable*/ M... rest) {
+    public Ordered containsAtLeast(@Nullable M first, @Nullable M second, @Nullable M... rest) {
       return delegate(Lists.asList(first, second, rest)).containsAtLeast(first, second, rest);
     }
 
@@ -770,7 +795,7 @@ public class IterableOfProtosSubject<M extends Message> extends IterableSubject 
     }
 
     @Override
-    public void containsAnyOf(@Nullable M first, @Nullable M second, /*@Nullable*/ M... rest) {
+    public void containsAnyOf(@Nullable M first, @Nullable M second, @Nullable M... rest) {
       delegate(Lists.asList(first, second, rest)).containsAnyOf(first, second, rest);
     }
 
@@ -786,7 +811,7 @@ public class IterableOfProtosSubject<M extends Message> extends IterableSubject 
 
     @Override
     public void containsNoneOf(
-        @Nullable M firstExcluded, @Nullable M secondExcluded, /*@Nullable*/ M... restOfExcluded) {
+        @Nullable M firstExcluded, @Nullable M secondExcluded, @Nullable M... restOfExcluded) {
       delegate(Lists.asList(firstExcluded, secondExcluded, restOfExcluded))
           .containsNoneOf(firstExcluded, secondExcluded, restOfExcluded);
     }
@@ -1029,7 +1054,7 @@ public class IterableOfProtosSubject<M extends Message> extends IterableSubject 
     }
 
     @Override
-    public Ordered containsExactly(/*@Nullable*/ M... expected) {
+    public Ordered containsExactly(@Nullable M... expected) {
       return usingCorrespondence().containsExactly(expected);
     }
 
@@ -1044,7 +1069,7 @@ public class IterableOfProtosSubject<M extends Message> extends IterableSubject 
     }
 
     @Override
-    public Ordered containsAtLeast(@Nullable M first, @Nullable M second, /*@Nullable*/ M... rest) {
+    public Ordered containsAtLeast(@Nullable M first, @Nullable M second, @Nullable M... rest) {
       return usingCorrespondence().containsAtLeast(first, second, rest);
     }
 
@@ -1059,7 +1084,7 @@ public class IterableOfProtosSubject<M extends Message> extends IterableSubject 
     }
 
     @Override
-    public void containsAnyOf(@Nullable M first, @Nullable M second, /*@Nullable*/ M... rest) {
+    public void containsAnyOf(@Nullable M first, @Nullable M second, @Nullable M... rest) {
       usingCorrespondence().containsAnyOf(first, second, rest);
     }
 
@@ -1075,7 +1100,7 @@ public class IterableOfProtosSubject<M extends Message> extends IterableSubject 
 
     @Override
     public void containsNoneOf(
-        @Nullable M firstExcluded, @Nullable M secondExcluded, /*@Nullable*/ M... restOfExcluded) {
+        @Nullable M firstExcluded, @Nullable M secondExcluded, @Nullable M... restOfExcluded) {
       usingCorrespondence().containsNoneOf(firstExcluded, secondExcluded, restOfExcluded);
     }
 
