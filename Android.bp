@@ -117,10 +117,3 @@ java_library {
     static_libs: ["truth"],
     sdk_version: "current",
 }
-
-java_library {
-    name: "truth-java8-extension-jar",
-    host_supported: true,
-    static_libs: ["truth-java8-extension"],
-    sdk_version: "current",
-}
