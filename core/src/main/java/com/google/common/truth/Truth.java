@@ -73,21 +73,18 @@ import org.checkerframework.checker.nullness.qual.Nullable;
 public final class Truth {
   private Truth() {}
 
-  private static final FailureStrategy THROW_ASSERTION_ERROR =
-      new FailureStrategy() {
-        @Override
-        public void fail(AssertionError failure) {
-          throw failure;
-        }
-      };
-
+  @SuppressWarnings("ConstantCaseForConstants") // Despite the "Builder" name, it's not mutable.
   private static final StandardSubjectBuilder ASSERT =
-      StandardSubjectBuilder.forCustomFailureStrategy(THROW_ASSERTION_ERROR);
+      StandardSubjectBuilder.forCustomFailureStrategy(
+          failure -> {
+            throw failure;
+          });
 
   /**
    * Begins a call chain with the fluent Truth API. If the check made by the chain fails, it will
    * throw {@link AssertionError}.
    */
+  @SuppressWarnings("MemberName") // The underscore is a weird but intentional choice.
   public static StandardSubjectBuilder assert_() {
     return ASSERT;
   }
@@ -101,7 +98,7 @@ public final class Truth {
    * StandardSubjectBuilder#about about(...)}, as discussed in <a
    * href="https://truth.dev/faq#java8">this FAQ entry</a>.
    */
-  public static StandardSubjectBuilder assertWithMessage(String messageToPrepend) {
+  public static StandardSubjectBuilder assertWithMessage(@Nullable String messageToPrepend) {
     return assert_().withMessage(messageToPrepend);
   }
 
@@ -121,7 +118,7 @@ public final class Truth {
    * @throws IllegalArgumentException if the number of placeholders in the format string does not
    *     equal the number of given arguments
    */
-  public static StandardSubjectBuilder assertWithMessage(String format, Object... args) {
+  public static StandardSubjectBuilder assertWithMessage(String format, @Nullable Object... args) {
     return assert_().withMessage(format, args);
   }
 
@@ -144,7 +141,8 @@ public final class Truth {
     return assert_().about(factory);
   }
 
-  public static <T extends Comparable<?>> ComparableSubject<T> assertThat(@Nullable T actual) {
+  public static <ComparableT extends Comparable<?>> ComparableSubject<ComparableT> assertThat(
+      @Nullable ComparableT actual) {
     return assert_().that(actual);
   }
 
@@ -157,6 +155,7 @@ public final class Truth {
   }
 
   @GwtIncompatible("ClassSubject.java")
+  @J2ktIncompatible
   public static ClassSubject assertThat(@Nullable Class<?> actual) {
     return assert_().that(actual);
   }
@@ -193,39 +192,40 @@ public final class Truth {
     return assert_().that(actual);
   }
 
-  public static <T> ObjectArraySubject<T> assertThat(@Nullable T /*@Nullable*/[] actual) {
+  @SuppressWarnings("AvoidObjectArrays")
+  public static <T> ObjectArraySubject<T> assertThat(@Nullable T @Nullable [] actual) {
     return assert_().that(actual);
   }
 
-  public static PrimitiveBooleanArraySubject assertThat(boolean /*@Nullable*/[] actual) {
+  public static PrimitiveBooleanArraySubject assertThat(boolean @Nullable [] actual) {
     return assert_().that(actual);
   }
 
-  public static PrimitiveShortArraySubject assertThat(short /*@Nullable*/[] actual) {
+  public static PrimitiveShortArraySubject assertThat(short @Nullable [] actual) {
     return assert_().that(actual);
   }
 
-  public static PrimitiveIntArraySubject assertThat(int /*@Nullable*/[] actual) {
+  public static PrimitiveIntArraySubject assertThat(int @Nullable [] actual) {
     return assert_().that(actual);
   }
 
-  public static PrimitiveLongArraySubject assertThat(long /*@Nullable*/[] actual) {
+  public static PrimitiveLongArraySubject assertThat(long @Nullable [] actual) {
     return assert_().that(actual);
   }
 
-  public static PrimitiveByteArraySubject assertThat(byte /*@Nullable*/[] actual) {
+  public static PrimitiveByteArraySubject assertThat(byte @Nullable [] actual) {
     return assert_().that(actual);
   }
 
-  public static PrimitiveCharArraySubject assertThat(char /*@Nullable*/[] actual) {
+  public static PrimitiveCharArraySubject assertThat(char @Nullable [] actual) {
     return assert_().that(actual);
   }
 
-  public static PrimitiveFloatArraySubject assertThat(float /*@Nullable*/[] actual) {
+  public static PrimitiveFloatArraySubject assertThat(float @Nullable [] actual) {
     return assert_().that(actual);
   }
 
-  public static PrimitiveDoubleArraySubject assertThat(double /*@Nullable*/[] actual) {
+  public static PrimitiveDoubleArraySubject assertThat(double @Nullable [] actual) {
     return assert_().that(actual);
   }
 
@@ -296,18 +296,18 @@ public final class Truth {
     }
 
     static SimpleAssertionError createWithNoStack(String message) {
-      return createWithNoStack(message, /*cause=*/ null);
+      return createWithNoStack(message, /* cause= */ null);
     }
 
     @Override
     @SuppressWarnings("UnsynchronizedOverridesSynchronized")
-    public Throwable getCause() {
+    public @Nullable Throwable getCause() {
       return cause;
     }
 
     @Override
     public String toString() {
-      return getLocalizedMessage();
+      return checkNotNull(getLocalizedMessage());
     }
   }
 }

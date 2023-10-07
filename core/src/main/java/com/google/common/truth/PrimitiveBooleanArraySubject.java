@@ -15,6 +15,8 @@
  */
 package com.google.common.truth;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 import com.google.common.primitives.Booleans;
 import org.checkerframework.checker.nullness.qual.Nullable;
 
@@ -24,15 +26,15 @@ import org.checkerframework.checker.nullness.qual.Nullable;
  * @author Christian Gruber (cgruber@israfil.net)
  */
 public final class PrimitiveBooleanArraySubject extends AbstractArraySubject {
-  private final boolean[] actual;
+  private final boolean @Nullable [] actual;
 
   PrimitiveBooleanArraySubject(
-      FailureMetadata metadata, boolean /*@Nullable*/[] o, @Nullable String typeDescription) {
+      FailureMetadata metadata, boolean @Nullable [] o, @Nullable String typeDescription) {
     super(metadata, o, typeDescription);
     this.actual = o;
   }
 
   public IterableSubject asList() {
-    return checkNoNeedToDisplayBothValues("asList()").that(Booleans.asList(actual));
+    return checkNoNeedToDisplayBothValues("asList()").that(Booleans.asList(checkNotNull(actual)));
   }
 }
