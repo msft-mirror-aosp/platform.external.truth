@@ -208,7 +208,7 @@ public class ProtoSubjectTest extends ProtoSubjectTestBase {
         fail("Expected failure.");
       } catch (Exception e) {
         assertThat(e).hasMessageThat().contains("o_double");
-        assertThat(e).hasMessageThat().contains("is a primitive field in a Proto 3 message");
+        assertThat(e).hasMessageThat().contains("is a field without presence");
       }
     } else {
       expectThat(message)
@@ -248,8 +248,8 @@ public class ProtoSubjectTest extends ProtoSubjectTestBase {
     Message eqMessage = parse("r_string: \"bar\" r_string: \"foo\"");
     Message diffMessage = parse("r_string: \"foo\" r_string: \"foo\" r_string: \"bar\"");
 
-    expectThat(message).isEqualTo(message.toBuilder().build());
-    expectThat(message).ignoringRepeatedFieldOrder().isEqualTo(message.toBuilder().build());
+    expectThat(message).isEqualTo(clone(message));
+    expectThat(message).ignoringRepeatedFieldOrder().isEqualTo(clone(message));
     expectThat(diffMessage).isNotEqualTo(message);
     expectThat(diffMessage).ignoringRepeatedFieldOrder().isNotEqualTo(message);
     expectThat(eqMessage).isNotEqualTo(message);
@@ -268,10 +268,8 @@ public class ProtoSubjectTest extends ProtoSubjectTestBase {
             "r_test_message: { o_int: 44 r_string: \"qux\" r_string: \"baz\" } "
                 + "r_test_message: { o_int: 33 r_string: \"bar\" r_string: \"foo\" } ");
 
-    expectThat(nestedMessage).isEqualTo(nestedMessage.toBuilder().build());
-    expectThat(nestedMessage)
-        .ignoringRepeatedFieldOrder()
-        .isEqualTo(nestedMessage.toBuilder().build());
+    expectThat(nestedMessage).isEqualTo(clone(nestedMessage));
+    expectThat(nestedMessage).ignoringRepeatedFieldOrder().isEqualTo(clone(nestedMessage));
     expectThat(diffNestedMessage).isNotEqualTo(nestedMessage);
     expectThat(diffNestedMessage).ignoringRepeatedFieldOrder().isNotEqualTo(nestedMessage);
     expectThat(eqNestedMessage).isNotEqualTo(nestedMessage);
@@ -786,6 +784,91 @@ public class ProtoSubjectTest extends ProtoSubjectTestBase {
   }
 
   @Test
+  public void testAnyMessage_notEqual_diffPrintsExpandedAny() {
+    String typeUrl =
+        isProto3()
+            ? "type.googleapis.com/com.google.common.truth.extensions.proto.SubTestMessage3"
+            : "type.googleapis.com/com.google.common.truth.extensions.proto.SubTestMessage2";
+    Message msgWithAny =
+        parse("" + "o_int: 42 " + "o_any_message: { [" + typeUrl + "]: {r_string: \"foo\"} }");
+    Message msgWithoutAny = parse("o_int: 42");
+
+    expectFailureWhenTesting()
+        .that(msgWithAny)
+        .unpackingAnyUsing(getTypeRegistry(), getExtensionRegistry())
+        .isEqualTo(msgWithoutAny);
+    expectThatFailure()
+        .hasMessageThat()
+        .contains(
+            "added: o_any_message: \n" + "[" + typeUrl + "] {\n" + "  r_string: \"foo\"\n" + "}\n");
+
+    expectFailureWhenTesting()
+        .that(msgWithoutAny)
+        .unpackingAnyUsing(getTypeRegistry(), getExtensionRegistry())
+        .isEqualTo(msgWithAny);
+    expectThatFailure()
+        .hasMessageThat()
+        .contains(
+            "deleted: o_any_message: \n"
+                + "["
+                + typeUrl
+                + "] {\n"
+                + "  r_string: \"foo\"\n"
+                + "}\n");
+  }
+
+  @Test
+  public void testRepeatedAnyMessage_notEqual_diffPrintsExpandedAny() {
+    String typeUrl =
+        isProto3()
+            ? "type.googleapis.com/com.google.common.truth.extensions.proto.SubTestMessage3"
+            : "type.googleapis.com/com.google.common.truth.extensions.proto.SubTestMessage2";
+    String fooSubMessage = "{ [" + typeUrl + "]: {r_string: \"foo\"} }";
+    String barSubMessage = "{ [" + typeUrl + "]: {r_string: \"bar\"} }";
+    String bazSubMessage = "{ [" + typeUrl + "]: {r_string: \"baz\"} }";
+    Message msgWithFooBar =
+        parse(
+            ""
+                + "o_int: 42 "
+                + "r_any_message: "
+                + fooSubMessage
+                + "r_any_message: "
+                + barSubMessage);
+    Message msgWithBazFoo =
+        parse(
+            ""
+                + "o_int: 42 "
+                + "r_any_message: "
+                + bazSubMessage
+                + "r_any_message: "
+                + fooSubMessage);
+
+    expectFailureWhenTesting()
+        .that(msgWithFooBar)
+        .unpackingAnyUsing(getTypeRegistry(), getExtensionRegistry())
+        .ignoringRepeatedFieldOrder()
+        .isEqualTo(msgWithBazFoo);
+
+    expectThatFailure()
+        .hasMessageThat()
+        .contains(
+            ""
+                + "moved: r_any_message[1] -> r_any_message[0]:\n"
+                + "added: r_any_message[1]: \n"
+                + "["
+                + typeUrl
+                + "] {\n"
+                + "  r_string: \"bar\"\n"
+                + "}\n"
+                + "deleted: r_any_message[0]: \n"
+                + "["
+                + typeUrl
+                + "] {\n"
+                + "  r_string: \"baz\"\n"
+                + "}");
+  }
+
+  @Test
   public void testAnyMessagesWithDifferentTypes() {
     String typeUrl =
         isProto3()
@@ -870,8 +953,8 @@ public class ProtoSubjectTest extends ProtoSubjectTestBase {
   @Test
   public void testMapWithDefaultKeysAndValues() throws InvalidProtocolBufferException {
     Descriptor descriptor = getFieldDescriptor("o_int").getContainingType();
-    final String defaultString = "";
-    final int defaultInt32 = 0;
+    String defaultString = "";
+    int defaultInt32 = 0;
     Message message = makeProtoMap(ImmutableMap.of(defaultString, 1, "foo", defaultInt32));
     Message dynamicMessage =
         DynamicMessage.parseFrom(
