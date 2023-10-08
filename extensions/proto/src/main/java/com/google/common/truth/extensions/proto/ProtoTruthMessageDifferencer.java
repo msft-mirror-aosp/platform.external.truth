@@ -37,7 +37,6 @@ import com.google.protobuf.Any;
 import com.google.protobuf.Descriptors.Descriptor;
 import com.google.protobuf.Descriptors.FieldDescriptor;
 import com.google.protobuf.Descriptors.FieldDescriptor.JavaType;
-import com.google.protobuf.Descriptors.FileDescriptor.Syntax;
 import com.google.protobuf.Message;
 import com.google.protobuf.TextFormat;
 import com.google.protobuf.UnknownFieldSet;
@@ -62,12 +61,14 @@ import org.checkerframework.checker.nullness.qual.Nullable;
 final class ProtoTruthMessageDifferencer {
   private final FluentEqualityConfig rootConfig;
   private final Descriptor rootDescriptor;
+  private final TextFormat.Printer protoPrinter;
 
   private ProtoTruthMessageDifferencer(FluentEqualityConfig rootConfig, Descriptor descriptor) {
     rootConfig.validate(descriptor, FieldDescriptorValidator.ALLOW_ALL);
 
     this.rootConfig = rootConfig;
     this.rootDescriptor = descriptor;
+    this.protoPrinter = TextFormat.printer().usingTypeRegistry(rootConfig.useTypeRegistry());
   }
 
   /** Create a new {@link ProtoTruthMessageDifferencer} for the given config and descriptor. */
@@ -387,6 +388,7 @@ final class ProtoTruthMessageDifferencer {
                 .setActual(actualList.get(i))
                 .setActualFieldIndex(i)
                 .setFieldDescriptor(fieldDescriptor)
+                .setProtoPrinter(protoPrinter)
                 .build());
       } else {
         builder.addPairResult(
@@ -481,6 +483,7 @@ final class ProtoTruthMessageDifferencer {
                   .setFieldDescriptor(fieldDescriptor)
                   .setExpected(expected)
                   .setExpectedFieldIndex(expectedIndex)
+                  .setProtoPrinter(protoPrinter)
                   .build());
         }
       }
@@ -494,6 +497,7 @@ final class ProtoTruthMessageDifferencer {
               .setFieldDescriptor(fieldDescriptor)
               .setActual(actualList.get(index))
               .setActualFieldIndex(index)
+              .setProtoPrinter(protoPrinter)
               .build());
     }
 
@@ -505,7 +509,7 @@ final class ProtoTruthMessageDifferencer {
   // Also removes the index for the matching value from actualIndicies.
   //
   // If there is no match, returns null.
-  private RepeatedField./*@Nullable*/ PairResult findMatchingPairResult(
+  private RepeatedField.@Nullable PairResult findMatchingPairResult(
       Deque<Integer> actualIndices,
       List<?> actualValues,
       int expectedIndex,
@@ -555,7 +559,8 @@ final class ProtoTruthMessageDifferencer {
     RepeatedField.PairResult.Builder pairResultBuilder =
         RepeatedField.PairResult.newBuilder()
             .setResult(comparison.result())
-            .setFieldDescriptor(fieldDescriptor);
+            .setFieldDescriptor(fieldDescriptor)
+            .setProtoPrinter(protoPrinter);
     if (actual != null) {
       pairResultBuilder.setActual(actual).setActualFieldIndex(actualFieldIndex);
     }
@@ -687,7 +692,8 @@ final class ProtoTruthMessageDifferencer {
         SingularField.newBuilder()
             .setSubScopeId(SubScopeId.of(fieldDescriptor))
             .setFieldName(fieldName)
-            .setResult(result.build());
+            .setResult(result.build())
+            .setProtoPrinter(protoPrinter);
     if (actual != null) {
       singularFieldBuilder.setActual(actual);
     }
@@ -709,16 +715,12 @@ final class ProtoTruthMessageDifferencer {
       FluentEqualityConfig config) {
     Result.Builder result = Result.builder();
 
-    // Use the default if it's set and we're ignoring field absence, or if it's a Proto3 primitive
-    // for which default is indistinguishable from unset.
+    // Use the default if it's set and we're ignoring field absence or if it's a field without
+    // presence for which default is indistinguishable from unset.
     SubScopeId subScopeId = SubScopeId.of(fieldDescriptor);
-    boolean isNonRepeatedProto3 =
-        !fieldDescriptor.isRepeated()
-            && fieldDescriptor.getContainingOneof() == null
-            && fieldDescriptor.getFile().getSyntax() == Syntax.PROTO3;
+    boolean hasPresence = fieldDescriptor.isRepeated() || fieldDescriptor.hasPresence();
     boolean ignoreFieldAbsence =
-        isNonRepeatedProto3
-            || config.ignoreFieldAbsenceScope().contains(rootDescriptor, subScopeId);
+        !hasPresence || config.ignoreFieldAbsenceScope().contains(rootDescriptor, subScopeId);
     actual = orIfIgnoringFieldAbsence(actual, defaultValue, ignoreFieldAbsence);
     expected = orIfIgnoringFieldAbsence(expected, defaultValue, ignoreFieldAbsence);
 
@@ -750,7 +752,8 @@ final class ProtoTruthMessageDifferencer {
         SingularField.newBuilder()
             .setSubScopeId(SubScopeId.of(fieldDescriptor))
             .setFieldName(fieldName)
-            .setResult(result.build());
+            .setResult(result.build())
+            .setProtoPrinter(protoPrinter);
     if (actual != null) {
       singularFieldBuilder.setActual(actual);
     }
@@ -904,7 +907,8 @@ final class ProtoTruthMessageDifferencer {
         SingularField.newBuilder()
             .setSubScopeId(SubScopeId.of(unknownFieldDescriptor))
             .setFieldName(fieldName)
-            .setResult(result.build());
+            .setResult(result.build())
+            .setProtoPrinter(protoPrinter);
     if (actual != null) {
       singularFieldBuilder.setActual(actual);
     }
@@ -932,7 +936,8 @@ final class ProtoTruthMessageDifferencer {
         SingularField.newBuilder()
             .setSubScopeId(SubScopeId.of(unknownFieldDescriptor))
             .setFieldName(fieldName)
-            .setResult(result.build());
+            .setResult(result.build())
+            .setProtoPrinter(protoPrinter);
     if (actual != null) {
       singularFieldBuilder.setActual(actual);
     }
