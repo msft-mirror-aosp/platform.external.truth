@@ -15,12 +15,16 @@
  */
 package com.google.common.truth;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.common.base.Suppliers.memoize;
 import static com.google.common.base.Throwables.throwIfUnchecked;
 import static com.google.common.truth.DiffUtils.generateUnifiedDiff;
 import static com.google.common.truth.Fact.fact;
 
 import com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
+import com.google.common.base.Supplier;
+import com.google.common.base.Suppliers;
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
 import java.lang.reflect.Constructor;
@@ -59,13 +63,16 @@ final class Platform {
   static Throwable[] getSuppressed(Throwable throwable) {
     try {
       Method getSuppressed = throwable.getClass().getMethod("getSuppressed");
-      return (Throwable[]) getSuppressed.invoke(throwable);
+      return (Throwable[]) checkNotNull(getSuppressed.invoke(throwable));
     } catch (NoSuchMethodException e) {
       return new Throwable[0];
     } catch (IllegalAccessException e) {
-      throw new RuntimeException(e);
+      // We're calling a public method on a public class.
+      throw newLinkageError(e);
     } catch (InvocationTargetException e) {
-      throw new RuntimeException(e);
+      throwIfUnchecked(e.getCause());
+      // getSuppressed has no `throws` clause.
+      throw newLinkageError(e);
     }
   }
 
@@ -78,7 +85,9 @@ final class Platform {
    * the value passed to {@code assertThat} or {@code that}, as distinct from any later actual
    * values produced by chaining calls like {@code hasMessageThat}.
    */
-  static String inferDescription() {
+  // Checker complains that first invoke argument is null.
+  @SuppressWarnings("argument.type.incompatible")
+  static @Nullable String inferDescription() {
     if (isInferDescriptionDisabled()) {
       return null;
     }
@@ -181,7 +190,7 @@ final class Platform {
 
     @Override
     @SuppressWarnings("UnsynchronizedOverridesSynchronized")
-    public final Throwable getCause() {
+    public final @Nullable Throwable getCause() {
       return cause;
     }
 
@@ -189,7 +198,7 @@ final class Platform {
     // TODO(cpovirk): Write a test that fails without this. Ditto for SimpleAssertionError.
     @Override
     public final String toString() {
-      return getLocalizedMessage();
+      return checkNotNull(getLocalizedMessage());
     }
   }
 
@@ -201,6 +210,11 @@ final class Platform {
     return Float.toString(value);
   }
 
+  /** Turns a non-double, non-float object into a string. */
+  static String stringValueOfNonFloatingPoint(@Nullable Object o) {
+    return String.valueOf(o);
+  }
+
   /** Returns a human readable string representation of the throwable's stack trace. */
   static String getStackTraceAsString(Throwable throwable) {
     return Throwables.getStackTraceAsString(throwable);
@@ -208,7 +222,7 @@ final class Platform {
 
   /** Tests if current platform is Android. */
   static boolean isAndroid() {
-    return System.getProperty("java.runtime.name").contains("Android");
+    return checkNotNull(System.getProperty("java.runtime.name", "")).contains("Android");
   }
 
   /**
@@ -294,4 +308,60 @@ final class Platform {
     error.initCause(cause);
     return error;
   }
+
+  static boolean isKotlinRange(Iterable<?> iterable) {
+    return closedRangeClassIfAvailable.get() != null
+        && closedRangeClassIfAvailable.get().isInstance(iterable);
+    // (If the class isn't available, then nothing could be an instance of ClosedRange.)
+  }
+
+  // Not using lambda here because of wrong nullability type inference in this case.
+  private static final Supplier<@Nullable Class<?>> closedRangeClassIfAvailable =
+      Suppliers.<@Nullable Class<?>>memoize(
+          () -> {
+            try {
+              return Class.forName("kotlin.ranges.ClosedRange");
+              /*
+               * TODO(cpovirk): Consider looking up the Method we'll need here, too: If it's not
+               * present (maybe because Proguard stripped it, similar to cl/462826082), then we
+               * don't want our caller to continue on to call kotlinRangeContains, since it won't
+               * be able to give an answer about what ClosedRange.contains will return.
+               * (Alternatively, we could make kotlinRangeContains contain its own fallback to
+               * Iterables.contains. Conceivably its first fallback could even be to try reading
+               * `start` and `endInclusive` from the ClosedRange instance, but even then, we'd
+               * want to check in advance whether we're able to access those.)
+               */
+            } catch (ClassNotFoundException notAvailable) {
+              return null;
+            }
+          });
+
+  static boolean kotlinRangeContains(Iterable<?> haystack, @Nullable Object needle) {
+    try {
+      return (boolean) closedRangeContainsMethod.get().invoke(haystack, needle);
+    } catch (InvocationTargetException e) {
+      if (e.getCause() instanceof ClassCastException) {
+        // icky but no worse than what we normally do for isIn(Iterable)
+        return false;
+      }
+      throwIfUnchecked(e.getCause());
+      // That method has no `throws` clause.
+      throw newLinkageError(e.getCause());
+    } catch (IllegalAccessException e) {
+      // We're calling a public method on a public class.
+      throw newLinkageError(e);
+    }
+  }
+
+  private static final Supplier<Method> closedRangeContainsMethod =
+      memoize(
+          () -> {
+            try {
+              return checkNotNull(closedRangeClassIfAvailable.get())
+                  .getMethod("contains", Comparable.class);
+            } catch (NoSuchMethodException e) {
+              // That method exists. (But see the discussion at closedRangeClassIfAvailable above.)
+              throw newLinkageError(e);
+            }
+          });
 }

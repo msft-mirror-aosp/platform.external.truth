@@ -141,6 +141,10 @@ public class ProtoSubjectTestBase {
     return extensionRegistry;
   }
 
+  protected final Message clone(Message in) {
+    return in.toBuilder().build();
+  }
+
   protected Message parse(String textProto) {
     try {
       Message.Builder builder = defaultInstance.toBuilder();
@@ -250,7 +254,7 @@ public class ProtoSubjectTestBase {
     for (int i = 0; i < rest.length; i += 2) {
       builder.put((K) rest[i], (V) rest[i + 1]);
     }
-    return builder.build();
+    return builder.buildOrThrow();
   }
 
   @SuppressWarnings("unchecked")

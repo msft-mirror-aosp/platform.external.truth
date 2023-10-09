@@ -15,6 +15,8 @@
  */
 package com.google.common.truth;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 import java.util.Arrays;
 import org.checkerframework.checker.nullness.qual.Nullable;
 
@@ -23,16 +25,16 @@ import org.checkerframework.checker.nullness.qual.Nullable;
  *
  * @author Christian Gruber
  */
-public final class ObjectArraySubject<T> extends AbstractArraySubject {
-  private final T[] actual;
+public final class ObjectArraySubject<T extends @Nullable Object> extends AbstractArraySubject {
+  private final @Nullable T @Nullable [] actual;
 
   ObjectArraySubject(
-      FailureMetadata metadata, @Nullable T /*@Nullable*/[] o, @Nullable String typeDescription) {
+      FailureMetadata metadata, @Nullable T @Nullable [] o, @Nullable String typeDescription) {
     super(metadata, o, typeDescription);
     this.actual = o;
   }
 
   public IterableSubject asList() {
-    return checkNoNeedToDisplayBothValues("asList()").that(Arrays.asList(actual));
+    return checkNoNeedToDisplayBothValues("asList()").that(Arrays.asList(checkNotNull(actual)));
   }
 }
