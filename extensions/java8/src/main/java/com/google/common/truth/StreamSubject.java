@@ -18,6 +18,7 @@ package com.google.common.truth;
 import static java.util.stream.Collectors.toCollection;
 
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
+import com.google.errorprone.annotations.DoNotCall;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -39,6 +40,7 @@ import org.checkerframework.checker.nullness.qual.Nullable;
  *
  * @author Kurt Alfred Kluever
  */
+@SuppressWarnings("deprecation") // TODO(b/134064106): design an alternative to no-arg check()
 public final class StreamSubject extends Subject {
 
   private final List<?> actualList;
@@ -54,7 +56,7 @@ public final class StreamSubject extends Subject {
   }
 
   public static Subject.Factory<StreamSubject, Stream<?>> streams() {
-    return (metadata, subject) -> new StreamSubject(metadata, subject);
+    return StreamSubject::new;
   }
 
   /** Fails if the subject is not empty. */
@@ -144,6 +146,11 @@ public final class StreamSubject extends Subject {
    * on the object returned by this method.
    */
   @CanIgnoreReturnValue
+  /*
+   * We need to call containsExactly, not containsExactlyElementsIn, to get the handling we want for
+   * containsExactly(null).
+   */
+  @SuppressWarnings("ContainsExactlyVariadic")
   public Ordered containsExactly(@Nullable Object @Nullable ... varargs) {
     return check().that(actualList).containsExactly(varargs);
   }
@@ -223,7 +230,35 @@ public final class StreamSubject extends Subject {
     check().that(actualList).isInOrder(comparator);
   }
 
-  // TODO(user): Do we want to override + deprecate isEqualTo/isNotEqualTo?
+  /**
+   * @deprecated {@code streamA.isEqualTo(streamB)} always fails, except when passed the exact same
+   *     stream reference
+   */
+  @Override
+  @DoNotCall(
+      "StreamSubject.isEqualTo() is not supported because Streams do not have well-defined"
+          + " equality semantics")
+  @Deprecated
+  public void isEqualTo(@Nullable Object expected) {
+    throw new UnsupportedOperationException(
+        "StreamSubject.isEqualTo() is not supported because Streams do not have well-defined"
+            + " equality semantics");
+  }
+
+  /**
+   * @deprecated {@code streamA.isNotEqualTo(streamB)} always passes, except when passed the exact
+   *     same stream reference
+   */
+  @Override
+  @DoNotCall(
+      "StreamSubject.isNotEqualTo() is not supported because Streams do not have well-defined"
+          + " equality semantics")
+  @Deprecated
+  public void isNotEqualTo(@Nullable Object unexpected) {
+    throw new UnsupportedOperationException(
+        "StreamSubject.isNotEqualTo() is not supported because Streams do not have well-defined"
+            + " equality semantics");
+  }
 
   // TODO(user): Do we want to support comparingElementsUsing() on StreamSubject?
 }

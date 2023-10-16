@@ -20,9 +20,11 @@ import static java.lang.Float.parseFloat;
 import static jsinterop.annotations.JsPackage.GLOBAL;
 
 import com.google.common.collect.ImmutableList;
+import jsinterop.annotations.JsMethod;
 import jsinterop.annotations.JsProperty;
 import jsinterop.annotations.JsType;
 import org.checkerframework.checker.nullness.qual.Nullable;
+
 
 /**
  * Extracted routines that need to be swapped in for GWT, to allow for minimal deltas between the
@@ -50,21 +52,6 @@ final class Platform {
     return false;
   }
 
-  abstract static class PlatformComparisonFailure extends AssertionError {
-    PlatformComparisonFailure(
-        String message,
-        String unusedUnderGwtExpected,
-        String unusedUnderGwtActual,
-        Throwable cause) {
-      super(message, cause);
-    }
-
-    @Override
-    public final String toString() {
-      return getLocalizedMessage();
-    }
-  }
-
   /** Determines if the given subject contains a match for the given regex. */
   static boolean containsMatch(String subject, String regex) {
     return compile(regex).test(subject);
@@ -82,7 +69,7 @@ final class Platform {
     // Do nothing. See notes in StackTraceCleanerTest.
   }
 
-  static String inferDescription() {
+  static @Nullable String inferDescription() {
     return null;
   }
 
@@ -95,6 +82,21 @@ final class Platform {
      * always been stuck like this.
      */
     return null;
+  }
+
+  abstract static class PlatformComparisonFailure extends AssertionError {
+    PlatformComparisonFailure(
+        String message,
+        String unusedUnderGwtExpected,
+        String unusedUnderGwtActual,
+        @Nullable Throwable cause) {
+      super(message, cause);
+    }
+
+    @Override
+    public final String toString() {
+      return "" + getLocalizedMessage();
+    }
   }
 
   static String doubleToString(double value) {
@@ -136,15 +138,40 @@ final class Platform {
     return ((NativeNumber) (Object) value).toLocaleString("en-US", JavaLikeOptions.INSTANCE);
   }
 
-  /** Tests if current platform is Android which is always false. */
-  static boolean isAndroid() {
-    return false;
+  @JsType(isNative = true, namespace = "proto.im")
+  private static class Message {
+    public native String serialize();
+  }
+
+  @JsMethod(namespace = "proto.im.debug")
+  private static native Object dump(Message msg) /*-{
+    // Emtpy stub to make GWT happy. This will never get executed under GWT.
+    throw new Error();
+  }-*/;
+
+  /** Turns a non-double, non-float object into a string. */
+  static String stringValueOfNonFloatingPoint(@Nullable Object o) {
+    // Check if we are in J2CL mode by probing a system property that only exists in GWT.
+    boolean inJ2clMode = "doesntexist".equals(System.getProperty("superdevmode", "doesntexist"));
+    if (inJ2clMode && o instanceof Message) {
+      Message msg = (Message) o;
+      boolean dumpAvailable =
+          "true".equals(System.getProperty("goog.DEBUG", "true"))
+              && !"true".equals(System.getProperty("COMPILED", "false"));
+      return dumpAvailable ? dump(msg).toString() : msg.serialize();
+    }
+    return String.valueOf(o);
   }
 
   /** Returns a human readable string representation of the throwable's stack trace. */
   static String getStackTraceAsString(Throwable throwable) {
     // TODO(cpovirk): Write a naive implementation that at least dumps the main exception's stack.
     return throwable.toString();
+  }
+
+  /** Tests if current platform is Android which is always false. */
+  static boolean isAndroid() {
+    return false;
   }
 
   /**
@@ -170,9 +197,9 @@ final class Platform {
 
   @JsType(isNative = true, name = "RegExp", namespace = GLOBAL)
   private static class NativeRegExp {
-    public NativeRegExp(String pattern) {}
+    public NativeRegExp(@Nullable String pattern) {}
 
-    public native boolean test(String input);
+    public native boolean test(@Nullable String input);
   }
 
   @JsType(isNative = true, name = "Number", namespace = GLOBAL)
@@ -233,4 +260,13 @@ final class Platform {
      */
     return new ComparisonFailureWithFacts(messages, facts, expected, actual, cause);
   }
+
+  static boolean isKotlinRange(Iterable<?> iterable) {
+    return false;
+  }
+
+  static boolean kotlinRangeContains(Iterable<?> haystack, @Nullable Object needle) {
+    throw new AssertionError(); // never called under GWT because isKotlinRange returns false
+  }
 }
+

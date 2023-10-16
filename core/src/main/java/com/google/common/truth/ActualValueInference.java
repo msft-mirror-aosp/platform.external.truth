@@ -15,6 +15,7 @@ package com.google.common.truth;
 
 import static com.google.common.base.MoreObjects.firstNonNull;
 import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.collect.Iterables.getOnlyElement;
 import static java.lang.Thread.currentThread;
@@ -25,12 +26,14 @@ import com.google.common.annotations.GwtIncompatible;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSetMultimap;
+import com.google.common.collect.Iterables;
+import org.objectweb.asm.Opcodes;
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
-import com.google.errorprone.annotations.CheckReturnValue;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Map.Entry;
+import org.checkerframework.checker.nullness.qual.Nullable;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.Handle;
@@ -65,9 +68,10 @@ import org.objectweb.asm.Type;
  * this is all best-effort.
  */
 @GwtIncompatible
+@J2ktIncompatible
 final class ActualValueInference {
   /** <b>Call {@link Platform#inferDescription} rather than calling this directly.</b> */
-  static String describeActualValue(String className, String methodName, int lineNumber) {
+  static @Nullable String describeActualValue(String className, String methodName, int lineNumber) {
     InferenceClassVisitor visitor;
     try {
       // TODO(cpovirk): Verify that methodName is correct for constructors and static initializers.
@@ -89,7 +93,7 @@ final class ActualValueInference {
     try {
       stream = loader.getResourceAsStream(className.replace('.', '/') + ".class");
       // TODO(cpovirk): Disable inference if the bytecode version is newer than we've tested on?
-      new ClassReader(stream).accept(visitor, /*parsingOptions=*/ 0);
+      new ClassReader(stream).accept(visitor, /* parsingOptions= */ 0);
       ImmutableSet<StackEntry> actualsAtLine = visitor.actualValueAtLine.build().get(lineNumber);
       /*
        * It's very unlikely that more than one assertion would happen on the same line _but with
@@ -140,7 +144,7 @@ final class ActualValueInference {
       throw new ClassCastException(getClass().getName());
     }
 
-    String description() {
+    @Nullable String description() {
       return null;
     }
   }
@@ -149,6 +153,7 @@ final class ActualValueInference {
   @AutoValue
   @CopyAnnotations
   @GwtIncompatible
+  @J2ktIncompatible
   abstract static class OpaqueEntry extends StackEntry {
     @Override
     public final String toString() {
@@ -168,6 +173,7 @@ final class ActualValueInference {
   @AutoValue
   @CopyAnnotations
   @GwtIncompatible
+  @J2ktIncompatible
   abstract static class DescribedEntry extends StackEntry {
     @Override
     abstract String description();
@@ -193,6 +199,7 @@ final class ActualValueInference {
   @AutoValue
   @CopyAnnotations
   @GwtIncompatible
+  @J2ktIncompatible
   abstract static class SubjectEntry extends StackEntry {
     @Override
     abstract StackEntry actualValue();
@@ -266,7 +273,7 @@ final class ActualValueInference {
         String name,
         String methodDescriptor,
         ImmutableSetMultimap.Builder<Integer, StackEntry> actualValueAtLine) {
-      super(Opcodes.ASM8);
+      super(Opcodes.ASM9);
       localVariableSlots = createInitialLocalVariableSlots(access, owner, name, methodDescriptor);
       previousFrame =
           FrameInfo.create(
@@ -734,7 +741,7 @@ final class ActualValueInference {
 
     @Override
     public void visitMethodInsn(int opcode, String owner, String name, String desc, boolean itf) {
-      if (opcode == Opcodes.INVOKESPECIAL && "<init>".equals(name)) {
+      if (opcode == Opcodes.INVOKESPECIAL && name.equals("<init>")) {
         int argumentSize = (Type.getArgumentsAndReturnSizes(desc) >> 2);
         InferredType receiverType = getOperandFromTop(argumentSize - 1).type();
         if (receiverType.isUninitialized()) {
@@ -958,7 +965,7 @@ final class ActualValueInference {
     }
 
     private void pushDescriptor(String desc) {
-      pushDescriptorAndMaybeProcessMethodCall(desc, /*invocation=*/ null);
+      pushDescriptorAndMaybeProcessMethodCall(desc, /* invocation= */ null);
     }
 
     /**
@@ -973,9 +980,11 @@ final class ActualValueInference {
      * @param invocation the method invocation being visited, or {@code null} if a non-method
      *     descriptor is being visited
      */
-    private void pushDescriptorAndMaybeProcessMethodCall(String desc, Invocation invocation) {
+    private void pushDescriptorAndMaybeProcessMethodCall(
+        String desc, @Nullable Invocation invocation) {
       if (invocation != null && invocation.isOnSubjectInstance()) {
-        actualValueAtLocation.put(labelsSeen.build(), invocation.receiver().actualValue());
+        actualValueAtLocation.put(
+            labelsSeen.build(), checkNotNull(invocation.receiver()).actualValue());
       }
 
       boolean hasParams = invocation != null && (Type.getArgumentsAndReturnSizes(desc) >> 2) > 1;
@@ -1010,7 +1019,8 @@ final class ActualValueInference {
       }
     }
 
-    private void pushMaybeDescribed(InferredType type, Invocation invocation, boolean hasParams) {
+    private void pushMaybeDescribed(
+        InferredType type, @Nullable Invocation invocation, boolean hasParams) {
       push(invocation == null ? opaque(type) : invocation.deriveEntry(type, hasParams));
     }
 
@@ -1031,10 +1041,11 @@ final class ActualValueInference {
           operandStack,
           methodSignature);
       int expectedLastIndex = operandStack.size() - count - 1;
-      StackEntry lastPopped = null;
-      for (int i = operandStack.size() - 1; i > expectedLastIndex; --i) {
-        lastPopped = operandStack.remove(i);
-      }
+
+      StackEntry lastPopped;
+      do {
+        lastPopped = operandStack.remove(operandStack.size() - 1);
+      } while (operandStack.size() - 1 > expectedLastIndex);
       return lastPopped;
     }
 
@@ -1074,7 +1085,7 @@ final class ActualValueInference {
     }
 
     private StackEntry top() {
-      return operandStack.get(operandStack.size() - 1);
+      return Iterables.getLast(operandStack);
     }
 
     /**
@@ -1219,6 +1230,7 @@ final class ActualValueInference {
   @AutoValue
   @CopyAnnotations
   @GwtIncompatible
+  @J2ktIncompatible
   abstract static class FrameInfo {
 
     static FrameInfo create(ImmutableList<StackEntry> locals, ImmutableList<StackEntry> stack) {
@@ -1234,24 +1246,22 @@ final class ActualValueInference {
   @AutoValue
   @CopyAnnotations
   @GwtIncompatible
+  @J2ktIncompatible
   abstract static class Invocation {
     static Builder builder(String name) {
       return new AutoValue_ActualValueInference_Invocation.Builder().setName(name);
     }
 
     /** The receiver of this call, if it is an instance call. */
-    @Nullable
-    abstract StackEntry receiver();
+    abstract @Nullable StackEntry receiver();
 
     /** The value being passed to this call if it is an {@code assertThat} or {@code that} call. */
-    @Nullable
-    abstract StackEntry actualValue();
+    abstract @Nullable StackEntry actualValue();
 
     /**
      * The value being passed to this call if it is a boxing call (e.g., {@code Integer.valueOf}).
      */
-    @Nullable
-    abstract StackEntry boxingInput();
+    abstract @Nullable StackEntry boxingInput();
 
     abstract String name();
 
@@ -1261,7 +1271,7 @@ final class ActualValueInference {
       } else if (actualValue() != null) {
         return subjectFor(type, actualValue());
       } else if (isOnSubjectInstance()) {
-        return subjectFor(type, receiver().actualValue());
+        return subjectFor(type, checkNotNull(receiver()).actualValue());
       } else if (BORING_NAMES.contains(name())) {
         /*
          * TODO(cpovirk): For no-arg instance methods like get(), return "foo.get()," where "foo" is
@@ -1278,7 +1288,6 @@ final class ActualValueInference {
     }
 
     @AutoValue.Builder
-    @CanIgnoreReturnValue
     abstract static class Builder {
       abstract Builder setReceiver(StackEntry receiver);
 
@@ -1288,7 +1297,6 @@ final class ActualValueInference {
 
       abstract Builder setName(String name);
 
-      @CheckReturnValue
       abstract Invocation build();
     }
   }
@@ -1297,6 +1305,7 @@ final class ActualValueInference {
   @AutoValue
   @CopyAnnotations
   @GwtIncompatible
+  @J2ktIncompatible
   abstract static class InferredType {
 
     static final String UNINITIALIZED_PREFIX = "UNINIT@";
@@ -1320,7 +1329,7 @@ final class ActualValueInference {
 
     /** Create a type for a value. */
     static InferredType create(String descriptor) {
-      if (UNINITIALIZED_PREFIX.equals(descriptor)) {
+      if (descriptor.equals(UNINITIALIZED_PREFIX)) {
         return UNINITIALIZED;
       }
       char firstChar = descriptor.charAt(0);
@@ -1395,7 +1404,7 @@ final class ActualValueInference {
     private String className;
 
     InferenceClassVisitor(String methodNameToVisit) {
-      super(Opcodes.ASM7);
+      super(Opcodes.ASM9);
       this.methodNameToVisit = methodNameToVisit;
     }
 
@@ -1411,7 +1420,7 @@ final class ActualValueInference {
     }
 
     @Override
-    public MethodVisitor visitMethod(
+    public @Nullable MethodVisitor visitMethod(
         int access, String name, String desc, String signature, String[] exceptions) {
       /*
        * Each InferenceMethodVisitor instance may be used only once. Still, it might seem like we
@@ -1455,7 +1464,8 @@ final class ActualValueInference {
      */
     return (owner.equals("com/google/common/truth/Truth") && name.equals("assertThat"))
         || (owner.equals("com/google/common/truth/StandardSubjectBuilder") && name.equals("that"))
-        || (owner.equals("com/google/common/truth/SimpleSubjectBuilder") && name.equals("that"));
+        || (owner.equals("com/google/common/truth/SimpleSubjectBuilder") && name.equals("that"))
+        || (owner.equals("com/google/common/truth/Expect") && name.equals("that"));
   }
 
   private static boolean isBoxing(String owner, String name, String desc) {
@@ -1496,7 +1506,7 @@ final class ActualValueInference {
     return (flags & bitmask) == bitmask;
   }
 
-  private static void closeQuietly(InputStream stream) {
+  private static void closeQuietly(@Nullable InputStream stream) {
     if (stream == null) {
       return;
     }
@@ -1506,15 +1516,6 @@ final class ActualValueInference {
       // TODO(cpovirk): Log a warning?
     }
   }
-
-  /*
-   * TODO(cpovirk): Switch to using Checker Framework @Nullable. The problem I see if I try to
-   * switch now is that the AutoValue-generated code is `@Nullable ActualValueInference.StackEntry`
-   * rather than `ActualValueInference.@Nullable StackEntry`. AutoValue normally gets this right
-   * (b/29530042), so I think the failure here is because we use `-source 7`. That might still be
-   * fine, except that j2objc compilation appears to then use `-source 8`.
-   */
-  @interface Nullable {}
 
   private ActualValueInference() {}
 }

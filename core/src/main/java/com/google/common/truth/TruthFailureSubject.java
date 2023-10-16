@@ -55,12 +55,13 @@ public final class TruthFailureSubject extends ThrowableSubject {
   private static final Factory<TruthFailureSubject, AssertionError> FACTORY =
       new Factory<TruthFailureSubject, AssertionError>() {
         @Override
-        public TruthFailureSubject createSubject(FailureMetadata metadata, AssertionError actual) {
+        public TruthFailureSubject createSubject(
+            FailureMetadata metadata, @Nullable AssertionError actual) {
           return new TruthFailureSubject(metadata, actual, "failure");
         }
       };
 
-  private final AssertionError actual;
+  private final @Nullable AssertionError actual;
 
   TruthFailureSubject(
       FailureMetadata metadata, @Nullable AssertionError actual, @Nullable String typeDescription) {
@@ -71,7 +72,7 @@ public final class TruthFailureSubject extends ThrowableSubject {
   /** Returns a subject for the list of fact keys. */
   public IterableSubject factKeys() {
     if (!(actual instanceof ErrorWithFacts)) {
-      failWithActual(simpleFact("expected a failure thrown by Truth's new failure API"));
+      failWithActual(simpleFact("expected a failure thrown by Truth's failure API"));
       return ignoreCheck().that(ImmutableList.of());
     }
     ErrorWithFacts error = (ErrorWithFacts) actual;
@@ -124,7 +125,7 @@ public final class TruthFailureSubject extends ThrowableSubject {
   private StringSubject doFactValue(String key, @Nullable Integer index) {
     checkNotNull(key);
     if (!(actual instanceof ErrorWithFacts)) {
-      failWithActual(simpleFact("expected a failure thrown by Truth's new failure API"));
+      failWithActual(simpleFact("expected a failure thrown by Truth's failure API"));
       return ignoreCheck().that("");
     }
     ErrorWithFacts error = (ErrorWithFacts) actual;
