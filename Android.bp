@@ -95,25 +95,3 @@ java_library {
     ],
     sdk_version: "current",
 }
-
-// Deprecated aliases
-java_library {
-    name: "truth-prebuilt",
-    host_supported: true,
-    static_libs: ["truth"],
-    sdk_version: "current",
-}
-
-java_library {
-    name: "truth-prebuilt-jar",
-    host_supported: true,
-    static_libs: ["truth"],
-    sdk_version: "current",
-}
-
-java_library {
-    name: "truth-host-prebuilt",
-    host_supported: true,
-    static_libs: ["truth"],
-    sdk_version: "current",
-}
