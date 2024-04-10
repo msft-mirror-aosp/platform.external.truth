@@ -78,7 +78,6 @@ java_library {
     sdk_version: "current",
 }
 
-
 java_library {
     name: "truth-liteproto-extension",
     host_supported: true,
@@ -94,4 +93,26 @@ java_library {
         "libprotobuf-java-lite",
     ],
     sdk_version: "current",
+}
+
+java_library_host {
+    name: "truth-proto-extension",
+    srcs: ["extensions/proto/src/main/java/**/*.java"],
+    libs: [
+        "auto_value_annotations",
+        "auto_value_memoized_extension_annotations",
+        "error_prone_annotations",
+        "guava-android-annotation-stubs",
+        "truth",
+        "truth-liteproto-extension",
+    ],
+    plugins: [
+        "auto_oneof_plugin",
+        "auto_value_memoized_extension_plugin",
+        "auto_value_plugin",
+    ],
+    static_libs: [
+        "guava",
+        "libprotobuf-java-full",
+    ],
 }
