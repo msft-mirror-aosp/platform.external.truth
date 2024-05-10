@@ -16,6 +16,7 @@
 package com.google.common.truth;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.truth.Fact.simpleFact;
 
 import java.lang.reflect.Array;
@@ -27,7 +28,7 @@ import org.checkerframework.checker.nullness.qual.Nullable;
  * @author Christian Gruber (cgruber@israfil.net)
  */
 abstract class AbstractArraySubject extends Subject {
-  private final Object actual;
+  private final @Nullable Object actual;
 
   AbstractArraySubject(
       FailureMetadata metadata, @Nullable Object actual, @Nullable String typeDescription) {
@@ -55,11 +56,11 @@ abstract class AbstractArraySubject extends Subject {
    * @throws IllegalArgumentException if {@code length < 0}
    */
   public final void hasLength(int length) {
-    checkArgument(length >= 0, "length (%s) must be >= 0");
+    checkArgument(length >= 0, "length (%s) must be >= 0", length);
     check("length").that(length()).isEqualTo(length);
   }
 
   private int length() {
-    return Array.getLength(actual);
+    return Array.getLength(checkNotNull(actual));
   }
 }

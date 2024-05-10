@@ -16,6 +16,7 @@
 package com.google.common.truth;
 
 import static com.google.common.base.MoreObjects.firstNonNull;
+import static com.google.common.base.Preconditions.checkNotNull;
 import static java.lang.Thread.currentThread;
 
 import com.google.common.annotations.GwtIncompatible;
@@ -26,9 +27,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Set;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
 /** Utility that cleans stack traces to remove noise from common frameworks. */
 @GwtIncompatible
+@J2ktIncompatible
 final class StackTraceCleaner {
 
   static final String CLEANER_LINK = "https://goo.gl/aH3UyP";
@@ -48,8 +51,8 @@ final class StackTraceCleaner {
 
   private final Throwable throwable;
   private final List<StackTraceElementWrapper> cleanedStackTrace = new ArrayList<>();
-  private StackTraceElementWrapper lastStackFrameElementWrapper = null;
-  private StackFrameType currentStreakType = null;
+  private @Nullable StackTraceElementWrapper lastStackFrameElementWrapper = null;
+  private @Nullable StackFrameType currentStreakType = null;
   private int currentStreakLength = 0;
 
   /**
@@ -63,6 +66,7 @@ final class StackTraceCleaner {
   // TODO(b/135924708): Add this to the test runners so that we clean all stack traces, not just
   // those of exceptions originating in Truth.
   /** Cleans the stack trace on {@code throwable}, replacing the trace that was originally on it. */
+  @SuppressWarnings("SetAll") // not available under old versions of Android
   private void clean(Set<Throwable> seenThrowables) {
     // Stack trace cleaning can be disabled using a system property.
     if (isStackTraceCleaningDisabled()) {
@@ -100,7 +104,7 @@ final class StackTraceCleaner {
      * frames. Keep those frames around (though much of JUnit itself and related startup frames will
      * still be removed by the remainder of this method) so that the user sees a useful stack.
      */
-    if (!(stackIndex < endIndex)) {
+    if (stackIndex >= endIndex) {
       endIndex = stackFrames.length;
     }
 
@@ -174,10 +178,11 @@ final class StackTraceCleaner {
 
     if (currentStreakLength == 1) {
       // A single frame isn't a streak. Just include the frame as-is in the result.
-      cleanedStackTrace.add(lastStackFrameElementWrapper);
+      cleanedStackTrace.add(checkNotNull(lastStackFrameElementWrapper));
     } else {
       // Add a single frame to the result summarizing the streak of framework frames
-      cleanedStackTrace.add(createStreakReplacementFrame(currentStreakType, currentStreakLength));
+      cleanedStackTrace.add(
+          createStreakReplacementFrame(checkNotNull(currentStreakType), currentStreakLength));
     }
 
     clearStreak();
@@ -190,7 +195,8 @@ final class StackTraceCleaner {
   }
 
   private static final ImmutableSet<String> SUBJECT_CLASS =
-      ImmutableSet.of(Subject.class.getCanonicalName());
+      ImmutableSet.of(
+          Subject.class.getCanonicalName());
 
   private static final ImmutableSet<String> STANDARD_SUBJECT_BUILDER_CLASS =
       ImmutableSet.of(StandardSubjectBuilder.class.getCanonicalName());
@@ -252,8 +258,8 @@ final class StackTraceCleaner {
     return false;
   }
 
-  private static boolean isSubtypeOf(Class<?> subclass, String superclass) {
-    for (; subclass != null; subclass = subclass.getSuperclass()) {
+  private static boolean isSubtypeOf(@Nullable Class<?> subclass, String superclass) {
+    for (; subclass != null; subclass = checkNotNull(subclass).getSuperclass()) {
       if (subclass.getCanonicalName() != null && subclass.getCanonicalName().equals(superclass)) {
         return true;
       }
@@ -352,6 +358,8 @@ final class StackTraceCleaner {
         "Testing framework",
         "junit",
         "org.junit",
+        "androidx.test.internal.runner",
+        "com.github.bazel_contrib.contrib_rules_jvm.junit5",
         "com.google.testing.junit",
         "com.google.testing.testsize",
         "com.google.testing.util"),
@@ -369,7 +377,9 @@ final class StackTraceCleaner {
       // TODO(cpovirk): This is really only for tests in Truth itself, so this doesn't matter yet,
       // but.... If the Truth tests someday start calling into nested classes, we may want to add:
       // || fullyQualifiedClassName.contains("Test$")
-      if (fullyQualifiedClassName.endsWith("Test")) {
+      if (fullyQualifiedClassName.endsWith("Test")
+          && !fullyQualifiedClassName.equals(
+              "androidx.test.internal.runner.junit3.NonLeakyTestSuite$NonLeakyTest")) {
         return StackFrameType.NEVER_REMOVE;
       }
 
