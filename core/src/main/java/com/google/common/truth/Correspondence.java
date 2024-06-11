@@ -65,7 +65,7 @@ import org.checkerframework.checker.nullness.qual.Nullable;
  *
  * @author Pete Gillin
  */
-public abstract class Correspondence<A, E> {
+public abstract class Correspondence<A extends @Nullable Object, E extends @Nullable Object> {
 
   /**
    * Constructs a {@link Correspondence} that compares actual and expected elements using the given
@@ -93,7 +93,7 @@ public abstract class Correspondence<A, E> {
    * class MyRecordTestHelper {
    *   static final Correspondence<MyRecord, MyRecord> EQUIVALENCE =
    *       Correspondence.from(MyRecordTestHelper::recordsEquivalent, "is equivalent to");
-   *   static boolean recordsEquivalent(@Nullable MyRecord actual, @Nullable MyRecord expected) {
+   *   static boolean recordsEquivalent(MyRecord actual, MyRecord expected) {
    *     // code to check whether records should be considered equivalent for testing purposes
    *   }
    * }
@@ -112,7 +112,7 @@ public abstract class Correspondence<A, E> {
    *     <some actual element> is an element that <description> <some expected element>"}, e.g.
    *     {@code "contains"}, {@code "is an instance of"}, or {@code "is equivalent to"}
    */
-  public static <A, E> Correspondence<A, E> from(
+  public static <A extends @Nullable Object, E extends @Nullable Object> Correspondence<A, E> from(
       BinaryPredicate<A, E> predicate, String description) {
     return new FromBinaryPredicate<>(predicate, description);
   }
@@ -126,16 +126,18 @@ public abstract class Correspondence<A, E> {
    * you should almost never see {@code BinaryPredicate} used as the type of a field or variable, or
    * a return type.
    */
-  public interface BinaryPredicate<A, E> {
+  public interface BinaryPredicate<A extends @Nullable Object, E extends @Nullable Object> {
 
     /**
      * Returns whether or not the actual and expected values satisfy the condition defined by this
      * predicate.
      */
-    boolean apply(@Nullable A actual, @Nullable E expected);
+    boolean apply(A actual, E expected);
   }
 
-  private static final class FromBinaryPredicate<A, E> extends Correspondence<A, E> {
+  private static final class FromBinaryPredicate<
+          A extends @Nullable Object, E extends @Nullable Object>
+      extends Correspondence<A, E> {
     private final BinaryPredicate<A, E> predicate;
     private final String description;
 
@@ -145,7 +147,7 @@ public abstract class Correspondence<A, E> {
     }
 
     @Override
-    public boolean compare(@Nullable A actual, @Nullable E expected) {
+    public boolean compare(A actual, E expected) {
       return predicate.apply(actual, expected);
     }
 
@@ -191,8 +193,9 @@ public abstract class Correspondence<A, E> {
    *     <some actual element> is an element that <description> <some expected element>"}, e.g.
    *     {@code "has an ID of"}
    */
-  public static <A, E> Correspondence<A, E> transforming(
-      Function<A, ? extends E> actualTransform, String description) {
+  public static <A extends @Nullable Object, E extends @Nullable Object>
+      Correspondence<A, E> transforming(
+          Function<A, ? extends E> actualTransform, String description) {
     return new Transforming<>(actualTransform, identity(), description);
   }
 
@@ -238,12 +241,14 @@ public abstract class Correspondence<A, E> {
    *     <some actual element> is an element that <description> <some expected element>"}, e.g.
    *     {@code "has the same ID as"}
    */
-  public static <A, E> Correspondence<A, E> transforming(
-      Function<A, ?> actualTransform, Function<E, ?> expectedTransform, String description) {
+  public static <A extends @Nullable Object, E extends @Nullable Object>
+      Correspondence<A, E> transforming(
+          Function<A, ?> actualTransform, Function<E, ?> expectedTransform, String description) {
     return new Transforming<>(actualTransform, expectedTransform, description);
   }
 
-  private static final class Transforming<A, E> extends Correspondence<A, E> {
+  private static final class Transforming<A extends @Nullable Object, E extends @Nullable Object>
+      extends Correspondence<A, E> {
 
     private final Function<? super A, ?> actualTransform;
     private final Function<? super E, ?> expectedTransform;
@@ -259,7 +264,7 @@ public abstract class Correspondence<A, E> {
     }
 
     @Override
-    public boolean compare(@Nullable A actual, @Nullable E expected) {
+    public boolean compare(A actual, E expected) {
       return Objects.equal(actualTransform.apply(actual), expectedTransform.apply(expected));
     }
 
@@ -373,10 +378,10 @@ public abstract class Correspondence<A, E> {
    *   static final Correspondence<MyRecord, MyRecord> EQUIVALENCE =
    *       Correspondence.from(MyRecordTestHelper::recordsEquivalent, "is equivalent to")
    *           .formattingDiffsUsing(MyRecordTestHelper::formatRecordDiff);
-   *   static boolean recordsEquivalent(@Nullable MyRecord actual, @Nullable MyRecord expected) {
+   *   static boolean recordsEquivalent(MyRecord actual, MyRecord expected) {
    *     // code to check whether records should be considered equivalent for testing purposes
    *   }
-   *   static String formatRecordDiff(@Nullable MyRecord actual, @Nullable MyRecord expected) {
+   *   static String formatRecordDiff(MyRecord actual, MyRecord expected) {
    *     // code to format the diff between the records
    *   }
    * }
@@ -395,17 +400,18 @@ public abstract class Correspondence<A, E> {
    * Correspondence#formattingDiffsUsing}. As a result, you should almost never see {@code
    * DiffFormatter} used as the type of a field or variable, or a return type.
    */
-  public interface DiffFormatter<A, E> {
+  public interface DiffFormatter<A extends @Nullable Object, E extends @Nullable Object> {
 
     /**
      * Returns a {@link String} describing the difference between the {@code actual} and {@code
      * expected} values, if possible, or {@code null} if not.
      */
     @Nullable
-    String formatDiff(@Nullable A actual, @Nullable E expected);
+    String formatDiff(A actual, E expected);
   }
 
-  private static class FormattingDiffs<A, E> extends Correspondence<A, E> {
+  private static class FormattingDiffs<A extends @Nullable Object, E extends @Nullable Object>
+      extends Correspondence<A, E> {
 
     private final Correspondence<A, E> delegate;
     private final DiffFormatter<? super A, ? super E> formatter;
@@ -416,12 +422,12 @@ public abstract class Correspondence<A, E> {
     }
 
     @Override
-    public boolean compare(@Nullable A actual, @Nullable E expected) {
+    public boolean compare(A actual, E expected) {
       return delegate.compare(actual, expected);
     }
 
     @Override
-    public @Nullable String formatDiff(@Nullable A actual, @Nullable E expected) {
+    public @Nullable String formatDiff(A actual, E expected) {
       return formatter.formatDiff(actual, expected);
     }
 
@@ -517,7 +523,7 @@ public abstract class Correspondence<A, E> {
    * returned false. (Note that, in the latter case at least, it is likely that the test author's
    * intention was <i>not</i> for the test to pass with these values.)
    */
-  public abstract boolean compare(@Nullable A actual, @Nullable E expected);
+  public abstract boolean compare(A actual, E expected);
 
   private static class StoredException {
 
@@ -525,9 +531,10 @@ public abstract class Correspondence<A, E> {
 
     private final Exception exception;
     private final String methodName;
-    private final List<Object> methodArguments;
+    private final List<@Nullable Object> methodArguments;
 
-    StoredException(Exception exception, String methodName, List<Object> methodArguments) {
+    StoredException(
+        Exception exception, String methodName, List<@Nullable Object> methodArguments) {
       this.exception = checkNotNull(exception);
       this.methodName = checkNotNull(methodName);
       this.methodArguments = checkNotNull(methodArguments);
@@ -552,9 +559,9 @@ public abstract class Correspondence<A, E> {
   static final class ExceptionStore {
 
     private final String argumentLabel;
-    private StoredException firstCompareException = null;
-    private StoredException firstPairingException = null;
-    private StoredException firstFormatDiffException = null;
+    private @Nullable StoredException firstCompareException = null;
+    private @Nullable StoredException firstPairingException = null;
+    private @Nullable StoredException firstFormatDiffException = null;
 
     static ExceptionStore forIterable() {
       return new ExceptionStore("elements");
@@ -580,7 +587,10 @@ public abstract class Correspondence<A, E> {
      *     exception was encountered
      */
     void addCompareException(
-        Class<?> callingClass, Exception exception, Object actual, Object expected) {
+        Class<?> callingClass,
+        Exception exception,
+        @Nullable Object actual,
+        @Nullable Object expected) {
       if (firstCompareException == null) {
         truncateStackTrace(exception, callingClass);
         firstCompareException = new StoredException(exception, "compare", asList(actual, expected));
@@ -597,7 +607,8 @@ public abstract class Correspondence<A, E> {
      * @param actual The {@code actual} argument to the {@code apply} call during which the
      *     exception was encountered
      */
-    void addActualKeyFunctionException(Class<?> callingClass, Exception exception, Object actual) {
+    void addActualKeyFunctionException(
+        Class<?> callingClass, Exception exception, @Nullable Object actual) {
       if (firstPairingException == null) {
         truncateStackTrace(exception, callingClass);
         firstPairingException =
@@ -616,7 +627,7 @@ public abstract class Correspondence<A, E> {
      *     exception was encountered
      */
     void addExpectedKeyFunctionException(
-        Class<?> callingClass, Exception exception, Object expected) {
+        Class<?> callingClass, Exception exception, @Nullable Object expected) {
       if (firstPairingException == null) {
         truncateStackTrace(exception, callingClass);
         firstPairingException =
@@ -636,7 +647,10 @@ public abstract class Correspondence<A, E> {
      *     exception was encountered
      */
     void addFormatDiffException(
-        Class<?> callingClass, Exception exception, Object actual, Object expected) {
+        Class<?> callingClass,
+        Exception exception,
+        @Nullable Object actual,
+        @Nullable Object expected) {
       if (firstFormatDiffException == null) {
         truncateStackTrace(exception, callingClass);
         firstFormatDiffException =
@@ -718,7 +732,7 @@ public abstract class Correspondence<A, E> {
    * returns false. This method can help with implementing the exception-handling policy described
    * above, but note that assertions using it <i>must</i> fail later if an exception was stored.
    */
-  final boolean safeCompare(@Nullable A actual, @Nullable E expected, ExceptionStore exceptions) {
+  final boolean safeCompare(A actual, E expected, ExceptionStore exceptions) {
     try {
       return compare(actual, expected);
     } catch (RuntimeException e) {
@@ -744,7 +758,7 @@ public abstract class Correspondence<A, E> {
    * exception and continue to describe the original failure as if this method had returned null,
    * mentioning the failure from this method as additional information.
    */
-  public @Nullable String formatDiff(@Nullable A actual, @Nullable E expected) {
+  public @Nullable String formatDiff(A actual, E expected) {
     return null;
   }
 
@@ -753,8 +767,7 @@ public abstract class Correspondence<A, E> {
    * the result. If it does throw, adds the exception to the given {@link ExceptionStore} and
    * returns null.
    */
-  final @Nullable String safeFormatDiff(
-      @Nullable A actual, @Nullable E expected, ExceptionStore exceptions) {
+  final @Nullable String safeFormatDiff(A actual, E expected, ExceptionStore exceptions) {
     try {
       return formatDiff(actual, expected);
     } catch (RuntimeException e) {
