@@ -27,6 +27,7 @@ import static com.google.common.truth.IterableSubject.ElementFactGrouping.ALL_IN
 import static com.google.common.truth.IterableSubject.ElementFactGrouping.FACT_PER_ELEMENT;
 import static com.google.common.truth.SubjectUtils.accumulate;
 import static com.google.common.truth.SubjectUtils.annotateEmptyStrings;
+import static com.google.common.truth.SubjectUtils.asList;
 import static com.google.common.truth.SubjectUtils.countDuplicates;
 import static com.google.common.truth.SubjectUtils.countDuplicatesAndAddTypeInfo;
 import static com.google.common.truth.SubjectUtils.countDuplicatesAndMaybeAddTypeInfoReturnObject;
@@ -36,7 +37,6 @@ import static com.google.common.truth.SubjectUtils.iterableToCollection;
 import static com.google.common.truth.SubjectUtils.iterableToList;
 import static com.google.common.truth.SubjectUtils.objectToTypeName;
 import static com.google.common.truth.SubjectUtils.retainMatchingToString;
-import static java.util.Arrays.asList;
 
 import com.google.common.base.Function;
 import com.google.common.base.Objects;
@@ -97,7 +97,15 @@ public class IterableSubject extends Subject {
    * {@link Subject#check(String, Object...) check(...)}{@code .that(actual)}.
    */
   protected IterableSubject(FailureMetadata metadata, @Nullable Iterable<?> iterable) {
-    super(metadata, iterable);
+    this(metadata, iterable, null);
+  }
+
+  /** Constructor for use by package-private callers. */
+  IterableSubject(
+      FailureMetadata metadata,
+      @Nullable Iterable<?> iterable,
+      @Nullable String typeDescriptionOverride) {
+    super(metadata, iterable, typeDescriptionOverride);
     this.actual = iterable;
   }
 
@@ -241,7 +249,7 @@ public class IterableSubject extends Subject {
    * fails.
    */
   @SuppressWarnings("AvoidObjectArrays")
-  public final void containsAnyIn(Object[] expected) {
+  public final void containsAnyIn(@Nullable Object[] expected) {
     containsAnyIn(asList(expected));
   }
 
@@ -333,7 +341,7 @@ public class IterableSubject extends Subject {
    */
   @CanIgnoreReturnValue
   @SuppressWarnings("AvoidObjectArrays")
-  public final Ordered containsAtLeastElementsIn(Object[] expected) {
+  public final Ordered containsAtLeastElementsIn(@Nullable Object[] expected) {
     return containsAtLeastElementsIn(asList(expected));
   }
 
