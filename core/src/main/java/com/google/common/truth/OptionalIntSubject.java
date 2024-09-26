@@ -18,28 +18,29 @@ package com.google.common.truth;
 import static com.google.common.truth.Fact.fact;
 import static com.google.common.truth.Fact.simpleFact;
 
-import java.util.Optional;
+import java.util.OptionalInt;
 import org.checkerframework.checker.nullness.qual.Nullable;
 
 /**
- * Propositions for Java 8 {@link Optional} subjects.
+ * Propositions for Java 8 {@link OptionalInt} subjects.
  *
- * @author Christian Gruber
+ * @author Ben Douglass
+ * @since 1.3.0 (previously part of {@code truth-java8-extension})
  */
-public final class OptionalSubject extends Subject {
-  private final @Nullable Optional<?> actual;
+@SuppressWarnings("Java7ApiChecker") // used only from APIs with Java 8 in their signatures
+@IgnoreJRERequirement
+public final class OptionalIntSubject extends Subject {
+  private final OptionalInt actual;
 
-  OptionalSubject(
+  OptionalIntSubject(
       FailureMetadata failureMetadata,
-      @Nullable Optional<?> subject,
+      @Nullable OptionalInt subject,
       @Nullable String typeDescription) {
     super(failureMetadata, subject, typeDescription);
     this.actual = subject;
   }
 
-  // TODO(cpovirk): Consider making OptionalIntSubject and OptionalLongSubject delegate to this.
-
-  /** Fails if the {@link Optional}{@code <T>} is empty or the subject is null. */
+  /** Fails if the {@link OptionalInt} is empty or the subject is null. */
   public void isPresent() {
     if (actual == null) {
       failWithActual(simpleFact("expected present optional"));
@@ -48,40 +49,32 @@ public final class OptionalSubject extends Subject {
     }
   }
 
-  /** Fails if the {@link Optional}{@code <T>} is present or the subject is null. */
+  /** Fails if the {@link OptionalInt} is present or the subject is null. */
   public void isEmpty() {
     if (actual == null) {
       failWithActual(simpleFact("expected empty optional"));
     } else if (actual.isPresent()) {
       failWithoutActual(
-          simpleFact("expected to be empty"), fact("but was present with value", actual.get()));
+          simpleFact("expected to be empty"),
+          fact("but was present with value", actual.getAsInt()));
     }
   }
 
   /**
-   * Fails if the {@link Optional}{@code <T>} does not have the given value or the subject is null.
-   *
-   * <p>To make more complex assertions on the optional's value split your assertion in two:
-   *
-   * <pre>{@code
-   * assertThat(myOptional).isPresent();
-   * assertThat(myOptional.get()).contains("foo");
-   * }</pre>
+   * Fails if the {@link OptionalInt} does not have the given value or the subject is null. More
+   * sophisticated comparisons can be done using {@code assertThat(optional.getAsInt())…}.
    */
-  public void hasValue(@Nullable Object expected) {
-    if (expected == null) {
-      throw new NullPointerException("Optional cannot have a null value.");
-    }
+  public void hasValue(int expected) {
     if (actual == null) {
       failWithActual("expected an optional with value", expected);
     } else if (!actual.isPresent()) {
-      failWithoutActual(fact("expected to have value", expected), simpleFact("but was empty"));
+      failWithoutActual(fact("expected to have value", expected), simpleFact("but was absent"));
     } else {
-      checkNoNeedToDisplayBothValues("get()").that(actual.get()).isEqualTo(expected);
+      checkNoNeedToDisplayBothValues("getAsInt()").that(actual.getAsInt()).isEqualTo(expected);
     }
   }
 
-  public static Subject.Factory<OptionalSubject, Optional<?>> optionals() {
-    return (metadata, subject) -> new OptionalSubject(metadata, subject, "optional");
+  public static Subject.Factory<OptionalIntSubject, OptionalInt> optionalInts() {
+    return (metadata, subject) -> new OptionalIntSubject(metadata, subject, "optionalInt");
   }
 }

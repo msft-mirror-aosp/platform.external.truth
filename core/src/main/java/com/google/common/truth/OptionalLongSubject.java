@@ -18,27 +18,29 @@ package com.google.common.truth;
 import static com.google.common.truth.Fact.fact;
 import static com.google.common.truth.Fact.simpleFact;
 
-import java.util.OptionalDouble;
+import java.util.OptionalLong;
 import org.checkerframework.checker.nullness.qual.Nullable;
 
 /**
- * Propositions for Java 8 {@link OptionalDouble} subjects.
+ * Propositions for Java 8 {@link OptionalLong} subjects.
  *
  * @author Ben Douglass
+ * @since 1.3.0 (previously part of {@code truth-java8-extension})
  */
-public final class OptionalDoubleSubject extends Subject {
+@SuppressWarnings("Java7ApiChecker") // used only from APIs with Java 8 in their signatures
+@IgnoreJRERequirement
+public final class OptionalLongSubject extends Subject {
+  private final OptionalLong actual;
 
-  private final OptionalDouble actual;
-
-  OptionalDoubleSubject(
+  OptionalLongSubject(
       FailureMetadata failureMetadata,
-      @Nullable OptionalDouble subject,
+      @Nullable OptionalLong subject,
       @Nullable String typeDescription) {
     super(failureMetadata, subject, typeDescription);
     this.actual = subject;
   }
 
-  /** Fails if the {@link OptionalDouble} is empty or the subject is null. */
+  /** Fails if the {@link OptionalLong} is empty or the subject is null. */
   public void isPresent() {
     if (actual == null) {
       failWithActual(simpleFact("expected present optional"));
@@ -47,38 +49,32 @@ public final class OptionalDoubleSubject extends Subject {
     }
   }
 
-  /** Fails if the {@link OptionalDouble} is present or the subject is null. */
+  /** Fails if the {@link OptionalLong} is present or the subject is null. */
   public void isEmpty() {
     if (actual == null) {
       failWithActual(simpleFact("expected empty optional"));
     } else if (actual.isPresent()) {
       failWithoutActual(
           simpleFact("expected to be empty"),
-          fact("but was present with value", actual.getAsDouble()));
+          fact("but was present with value", actual.getAsLong()));
     }
   }
 
   /**
-   * Fails if the {@link OptionalDouble} does not have the given value or the subject is null. This
-   * method is <i>not</i> recommended when the code under test is doing any kind of arithmetic,
-   * since the exact result of floating point arithmetic is sensitive to apparently trivial changes.
-   * More sophisticated comparisons can be done using {@code assertThat(optional.getAsDouble())…}.
-   * This method is recommended when the code under test is specified as either copying a value
-   * without modification from its input or returning a well-defined literal or constant value.
+   * Fails if the {@link OptionalLong} does not have the given value or the subject is null. More
+   * sophisticated comparisons can be done using {@code assertThat(optional.getAsLong())…}.
    */
-  public void hasValue(double expected) {
+  public void hasValue(long expected) {
     if (actual == null) {
       failWithActual("expected an optional with value", expected);
     } else if (!actual.isPresent()) {
       failWithoutActual(fact("expected to have value", expected), simpleFact("but was absent"));
     } else {
-      checkNoNeedToDisplayBothValues("getAsDouble()")
-          .that(actual.getAsDouble())
-          .isEqualTo(expected);
+      checkNoNeedToDisplayBothValues("getAsLong()").that(actual.getAsLong()).isEqualTo(expected);
     }
   }
 
-  public static Subject.Factory<OptionalDoubleSubject, OptionalDouble> optionalDoubles() {
-    return (metadata, subject) -> new OptionalDoubleSubject(metadata, subject, "optionalDouble");
+  public static Subject.Factory<OptionalLongSubject, OptionalLong> optionalLongs() {
+    return (metadata, subject) -> new OptionalLongSubject(metadata, subject, "optionalLong");
   }
 }
