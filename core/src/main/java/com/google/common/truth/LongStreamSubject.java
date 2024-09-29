@@ -39,13 +39,18 @@ import org.checkerframework.checker.nullness.qual.Nullable;
  * stream before asserting on it.
  *
  * @author Kurt Alfred Kluever
+ * @since 1.3.0 (previously part of {@code truth-java8-extension})
  */
-@SuppressWarnings("deprecation") // TODO(b/134064106): design an alternative to no-arg check()
+@SuppressWarnings({
+  "deprecation", // TODO(b/134064106): design an alternative to no-arg check()
+  "Java7ApiChecker", // used only from APIs with Java 8 in their signatures
+})
+@IgnoreJRERequirement
 public final class LongStreamSubject extends Subject {
 
   private final List<?> actualList;
 
-  private LongStreamSubject(FailureMetadata failureMetadata, @Nullable LongStream stream) {
+  LongStreamSubject(FailureMetadata failureMetadata, @Nullable LongStream stream) {
     super(failureMetadata, stream);
     this.actualList =
         (stream == null) ? null : stream.boxed().collect(toCollection(ArrayList::new));
