@@ -18,13 +18,14 @@ package com.google.common.truth;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import com.google.common.annotations.GwtIncompatible;
-import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Multiset;
 import com.google.common.collect.Table;
 import java.math.BigDecimal;
 import java.util.Map;
+import java.util.Optional;
+import java.util.stream.Stream;
 import org.checkerframework.checker.nullness.qual.Nullable;
 
 /**
@@ -149,7 +150,7 @@ public class StandardSubjectBuilder {
     return new PrimitiveDoubleArraySubject(metadata(), actual, "array");
   }
 
-  public final GuavaOptionalSubject that(@Nullable Optional<?> actual) {
+  public final GuavaOptionalSubject that(com.google.common.base.@Nullable Optional<?> actual) {
     return new GuavaOptionalSubject(metadata(), actual, "optional");
   }
 
@@ -167,6 +168,27 @@ public class StandardSubjectBuilder {
 
   public final TableSubject that(@Nullable Table<?, ?, ?> actual) {
     return new TableSubject(metadata(), actual);
+  }
+
+  /**
+   * @since 1.3.0 (with access to {@link OptionalSubject} previously part of {@code
+   *     truth-java8-extension})
+   */
+  @SuppressWarnings({
+    "Java7ApiChecker", // no more dangerous that wherever the user got the Optional
+    "NullableOptional", // Truth always accepts nulls, no matter the type
+  })
+  public final OptionalSubject that(@Nullable Optional<?> actual) {
+    return new OptionalSubject(metadata(), actual, "optional");
+  }
+
+  /**
+   * @since 1.3.0 (with access to {@link StreamSubject} previously part of {@code
+   *     truth-java8-extension})
+   */
+  @SuppressWarnings("Java7ApiChecker") // no more dangerous that wherever the user got the Stream
+  public final StreamSubject that(@Nullable Stream<?> actual) {
+    return new StreamSubject(metadata(), actual);
   }
 
   /**
