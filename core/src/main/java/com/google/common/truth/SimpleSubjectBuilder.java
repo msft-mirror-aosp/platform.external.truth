@@ -17,7 +17,7 @@ package com.google.common.truth;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-import org.checkerframework.checker.nullness.qual.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /**
  * In a fluent assertion chain, exposes the most common {@code that} method, which accepts a value
