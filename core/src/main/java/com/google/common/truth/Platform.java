@@ -85,8 +85,6 @@ final class Platform {
    * the value passed to {@code assertThat} or {@code that}, as distinct from any later actual
    * values produced by chaining calls like {@code hasMessageThat}.
    */
-  // Checker complains that first invoke argument is null.
-  @SuppressWarnings("argument.type.incompatible")
   static @Nullable String inferDescription() {
     if (isInferDescriptionDisabled()) {
       return null;
@@ -364,4 +362,11 @@ final class Platform {
               throw newLinkageError(e);
             }
           });
+
+  static boolean classMetadataUnsupported() {
+    // https://github.com/google/truth/issues/198
+    // TODO(cpovirk): Consider whether to remove instanceof tests under GWT entirely.
+    // TODO(cpovirk): Run more Truth tests under GWT, and add tests for this.
+    return false;
+  }
 }
