@@ -35,6 +35,7 @@ java_library {
         "auto_value_annotations",
         "error_prone_annotations",
         "guava-android-annotation-stubs",
+        "jspecify",
         "junit",
     ],
     static_libs: [
@@ -69,6 +70,7 @@ java_library {
         "auto_value_annotations",
         "error_prone_annotations",
         "guava-android-annotation-stubs",
+        "jspecify",
         "truth",
     ],
     static_libs: [
@@ -86,6 +88,7 @@ java_library {
         "auto_value_annotations",
         "error_prone_annotations",
         "guava-android-annotation-stubs",
+        "jspecify",
         "truth",
     ],
     static_libs: [
@@ -103,6 +106,7 @@ java_library_host {
         "auto_value_memoized_extension_annotations",
         "error_prone_annotations",
         "guava-android-annotation-stubs",
+        "jspecify",
         "truth",
         "truth-liteproto-extension",
     ],
