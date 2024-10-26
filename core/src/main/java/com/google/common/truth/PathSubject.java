@@ -18,6 +18,7 @@ package com.google.common.truth;
 import com.google.common.annotations.GwtIncompatible;
 import com.google.j2objc.annotations.J2ObjCIncompatible;
 import java.nio.file.Path;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Assertions for {@link Path} instances.
@@ -28,11 +29,21 @@ import java.nio.file.Path;
 @J2ObjCIncompatible
 @J2ktIncompatible
 public final class PathSubject extends Subject {
-  PathSubject(FailureMetadata failureMetadata, Path actual) {
+  PathSubject(FailureMetadata failureMetadata, @Nullable Path actual) {
     super(failureMetadata, actual);
   }
 
-  public static Subject.Factory<PathSubject, Path> paths() {
+  /**
+   * Obsolete factory instance. This factory was previously necessary for assertions like {@code
+   * assertWithMessage(...).about(intStreams()).that(stream)....}. Now, you can perform assertions
+   * like that without the {@code about(...)} call.
+   *
+   * @deprecated Instead of {@code about(paths()).that(...)}, use just {@code that(...)}. Similarly,
+   *     instead of {@code assertAbout(paths()).that(...)}, use just {@code assertThat(...)}.
+   */
+  @Deprecated
+  @SuppressWarnings("InlineMeSuggester") // We want users to remove the surrounding call entirely.
+  public static Factory<PathSubject, Path> paths() {
     return PathSubject::new;
   }
 }

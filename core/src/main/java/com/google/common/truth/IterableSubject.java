@@ -67,7 +67,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import org.checkerframework.checker.nullness.qual.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Propositions for {@link Iterable} subjects.
@@ -113,7 +113,8 @@ public class IterableSubject extends Subject {
   protected String actualCustomStringRepresentation() {
     if (actual != null) {
       // Check the value of iterable.toString() against the default Object.toString() implementation
-      // so we can avoid things like "com.google.common.graph.Traverser$GraphTraverser$1@5e316c74"
+      // so that we can avoid things like
+      // "com.google.common.graph.Traverser$GraphTraverser$1@5e316c74"
       String objectToString =
           actual.getClass().getName() + '@' + Integer.toHexString(System.identityHashCode(actual));
       if (actual.toString().equals(objectToString)) {
@@ -254,7 +255,7 @@ public class IterableSubject extends Subject {
   }
 
   /**
-   * Checks that the actual iterable contains at least all of the expected elements or fails. If an
+   * Checks that the actual iterable contains at least all the expected elements or fails. If an
    * element appears more than once in the expected elements to this call then it must appear at
    * least that number of times in the actual elements.
    *
@@ -271,7 +272,7 @@ public class IterableSubject extends Subject {
   }
 
   /**
-   * Checks that the actual iterable contains at least all of the expected elements or fails. If an
+   * Checks that the actual iterable contains at least all the expected elements or fails. If an
    * element appears more than once in the expected elements then it must appear at least that
    * number of times in the actual elements.
    *
@@ -280,7 +281,7 @@ public class IterableSubject extends Subject {
    * within the actual elements, but they are not required to be consecutive.
    */
   @CanIgnoreReturnValue
-  public final Ordered containsAtLeastElementsIn(Iterable<?> expectedIterable) {
+  public final Ordered containsAtLeastElementsIn(@Nullable Iterable<?> expectedIterable) {
     List<?> actual = Lists.newLinkedList(checkNotNull(this.actual));
     Collection<?> expected = iterableToCollection(expectedIterable);
 
@@ -331,7 +332,7 @@ public class IterableSubject extends Subject {
   }
 
   /**
-   * Checks that the actual iterable contains at least all of the expected elements or fails. If an
+   * Checks that the actual iterable contains at least all the expected elements or fails. If an
    * element appears more than once in the expected elements then it must appear at least that
    * number of times in the actual elements.
    *
@@ -709,7 +710,7 @@ public class IterableSubject extends Subject {
   }
 
   /**
-   * Checks that a actual iterable contains none of the excluded objects or fails. (Duplicates are
+   * Checks that an actual iterable contains none of the excluded objects or fails. (Duplicates are
    * irrelevant to this test, which fails if any of the actual elements equal any of the excluded.)
    */
   public final void containsNoneOf(
@@ -724,8 +725,9 @@ public class IterableSubject extends Subject {
    * iterable or fails. (Duplicates are irrelevant to this test, which fails if any of the actual
    * elements equal any of the excluded.)
    */
-  public final void containsNoneIn(Iterable<?> excluded) {
+  public final void containsNoneIn(@Nullable Iterable<?> excluded) {
     Collection<?> actual = iterableToCollection(checkNotNull(this.actual));
+    checkNotNull(excluded); // TODO(cpovirk): Produce a better exception message.
     List<@Nullable Object> present = new ArrayList<>();
     for (Object item : Sets.newLinkedHashSet(excluded)) {
       if (actual.contains(item)) {
@@ -948,7 +950,7 @@ public class IterableSubject extends Subject {
    *
    * @since 1.1
    */
-  public <T> UsingCorrespondence<T, T> formattingDiffsUsing(
+  public <T extends @Nullable Object> UsingCorrespondence<T, T> formattingDiffsUsing(
       DiffFormatter<? super T, ? super T> formatter) {
     return comparingElementsUsing(Correspondence.<T>equality().formattingDiffsUsing(formatter));
   }
@@ -1041,7 +1043,7 @@ public class IterableSubject extends Subject {
      *
      * <p>On assertions where it makes sense to do so, the elements are paired as follows: they are
      * keyed by {@code keyFunction}, and if an unexpected element and a missing element have the
-     * same non-null key then the they are paired up. (Elements with null keys are not paired.) The
+     * same non-null key then they are paired up. (Elements with null keys are not paired.) The
      * failure message will show paired elements together, and a diff will be shown if the {@link
      * Correspondence#formatDiff} method returns non-null.
      *
@@ -1083,8 +1085,8 @@ public class IterableSubject extends Subject {
      * <p>On assertions where it makes sense to do so, the elements are paired as follows: the
      * unexpected elements are keyed by {@code actualKeyFunction}, the missing elements are keyed by
      * {@code expectedKeyFunction}, and if an unexpected element and a missing element have the same
-     * non-null key then the they are paired up. (Elements with null keys are not paired.) The
-     * failure message will show paired elements together, and a diff will be shown if the {@link
+     * non-null key then they are paired up. (Elements with null keys are not paired.) The failure
+     * message will show paired elements together, and a diff will be shown if the {@link
      * Correspondence#formatDiff} method returns non-null.
      *
      * <p>The expected elements given in the assertion should be uniquely keyed by {@code
@@ -1559,8 +1561,8 @@ public class IterableSubject extends Subject {
     }
 
     /**
-     * Checks that the subject contains elements that corresponds to all of the expected elements,
-     * i.e. that there is a 1:1 mapping between any subset of the actual elements and the expected
+     * Checks that the subject contains elements that correspond to all the expected elements, i.e.
+     * that there is a 1:1 mapping between any subset of the actual elements and the expected
      * elements where each pair of elements correspond.
      *
      * <p>To also test that the contents appear in the given order, make a call to {@code inOrder()}
@@ -1574,8 +1576,8 @@ public class IterableSubject extends Subject {
     }
 
     /**
-     * Checks that the subject contains elements that corresponds to all of the expected elements,
-     * i.e. that there is a 1:1 mapping between any subset of the actual elements and the expected
+     * Checks that the subject contains elements that correspond to all the expected elements, i.e.
+     * that there is a 1:1 mapping between any subset of the actual elements and the expected
      * elements where each pair of elements correspond.
      *
      * <p>To also test that the contents appear in the given order, make a call to {@code inOrder()}
@@ -1640,8 +1642,8 @@ public class IterableSubject extends Subject {
     }
 
     /**
-     * Checks that the subject contains elements that corresponds to all of the expected elements,
-     * i.e. that there is a 1:1 mapping between any subset of the actual elements and the expected
+     * Checks that the subject contains elements that correspond to all the expected elements, i.e.
+     * that there is a 1:1 mapping between any subset of the actual elements and the expected
      * elements where each pair of elements correspond.
      *
      * <p>To also test that the contents appear in the given order, make a call to {@code inOrder()}
