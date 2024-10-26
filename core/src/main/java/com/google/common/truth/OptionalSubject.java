@@ -19,7 +19,7 @@ import static com.google.common.truth.Fact.fact;
 import static com.google.common.truth.Fact.simpleFact;
 
 import java.util.Optional;
-import org.checkerframework.checker.nullness.qual.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Propositions for Java 8 {@link Optional} subjects.
@@ -30,11 +30,13 @@ import org.checkerframework.checker.nullness.qual.Nullable;
 @SuppressWarnings("Java7ApiChecker") // used only from APIs with Java 8 in their signatures
 @IgnoreJRERequirement
 public final class OptionalSubject extends Subject {
+  @SuppressWarnings("NullableOptional") // Truth always accepts nulls, no matter the type
   private final @Nullable Optional<?> actual;
 
   OptionalSubject(
       FailureMetadata failureMetadata,
-      @Nullable Optional<?> subject,
+      @SuppressWarnings("NullableOptional") // Truth always accepts nulls, no matter the type
+          @Nullable Optional<?> subject,
       @Nullable String typeDescription) {
     super(failureMetadata, subject, typeDescription);
     this.actual = subject;
@@ -84,7 +86,18 @@ public final class OptionalSubject extends Subject {
     }
   }
 
-  public static Subject.Factory<OptionalSubject, Optional<?>> optionals() {
+  /**
+   * Obsolete factory instance. This factory was previously necessary for assertions like {@code
+   * assertWithMessage(...).about(paths()).that(path)....}. Now, you can perform assertions like
+   * that without the {@code about(...)} call.
+   *
+   * @deprecated Instead of {@code about(optionals()).that(...)}, use just {@code that(...)}.
+   *     Similarly, instead of {@code assertAbout(optionals()).that(...)}, use just {@code
+   *     assertThat(...)}.
+   */
+  @Deprecated
+  @SuppressWarnings("InlineMeSuggester") // We want users to remove the surrounding call entirely.
+  public static Factory<OptionalSubject, Optional<?>> optionals() {
     return (metadata, subject) -> new OptionalSubject(metadata, subject, "optional");
   }
 }
