@@ -23,7 +23,7 @@ import static com.google.common.truth.Fact.simpleFact;
 import com.google.common.collect.Table;
 import com.google.common.collect.Table.Cell;
 import com.google.common.collect.Tables;
-import org.checkerframework.checker.nullness.qual.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Propositions for {@link Table} subjects.
