@@ -21,11 +21,18 @@ import com.google.common.annotations.GwtIncompatible;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Multiset;
 import com.google.common.collect.Table;
+import com.google.j2objc.annotations.J2ObjCIncompatible;
 import java.math.BigDecimal;
+import java.nio.file.Path;
 import java.util.Map;
 import java.util.Optional;
+import java.util.OptionalDouble;
+import java.util.OptionalInt;
+import java.util.OptionalLong;
+import java.util.stream.IntStream;
+import java.util.stream.LongStream;
 import java.util.stream.Stream;
-import org.checkerframework.checker.nullness.qual.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /**
  * The primary entry point for <a href="https://truth.dev">Truth</a>, a library for fluent test
@@ -161,6 +168,23 @@ public final class Truth {
     return assert_().that(actual);
   }
 
+  /**
+   * Begins an assertion about a {@link Throwable}.
+   *
+   * <p>Truth does not provide its own support for calling a method and automatically catching an
+   * expected exception, only for asserting on the exception after it has been caught. To catch the
+   * exception, we suggest {@link org.junit.Assert#assertThrows(Class,
+   * org.junit.function.ThrowingRunnable) assertThrows} (JUnit), <a
+   * href="https://kotlinlang.org/api/latest/kotlin.test/kotlin.test/assert-fails-with.html">{@code
+   * assertFailsWith}</a> ({@code kotlin.test}), or similar functionality from your testing library
+   * of choice.
+   *
+   * <pre>
+   * InvocationTargetException expected =
+   *     assertThrows(InvocationTargetException.class, () -> method.invoke(null));
+   * assertThat(expected).hasCauseThat().isInstanceOf(IOException.class);
+   * </pre>
+   */
   public static ThrowableSubject assertThat(@Nullable Throwable actual) {
     return assert_().that(actual);
   }
@@ -194,7 +218,8 @@ public final class Truth {
   }
 
   @SuppressWarnings("AvoidObjectArrays")
-  public static <T> ObjectArraySubject<T> assertThat(@Nullable T @Nullable [] actual) {
+  public static <T extends @Nullable Object> ObjectArraySubject<T> assertThat(
+      T @Nullable [] actual) {
     return assert_().that(actual);
   }
 
@@ -251,58 +276,86 @@ public final class Truth {
     return assert_().that(actual);
   }
 
-  @SuppressWarnings("Java7ApiChecker") // no more dangerous that wherever the user got the Optional
-  @GwtIncompatible // creates ambiguities (Eclipse bug 577808 or similar?)
   /**
    * @since 1.3.0 (present in {@link Truth8} since before 1.0)
    */
-  public static <T> OptionalSubject assertThat(@Nullable Optional<T> actual) {
-    return assert_().that(actual);
-  }
-
-  @SuppressWarnings("Java7ApiChecker") // no more dangerous that wherever the user got the Stream
-  @GwtIncompatible // creates ambiguities (Eclipse bug 577808 or similar?)
-  /**
-   * @since 1.3.0 (present in {@link Truth8} since before 1.0)
-   */
-  public static <T extends @Nullable Object> StreamSubject assertThat(@Nullable Stream<T> actual) {
+  @SuppressWarnings({
+    "Java7ApiChecker", // no more dangerous than wherever the user got the Optional
+    "NullableOptional", // Truth always accepts nulls, no matter the type
+  })
+  public static OptionalSubject assertThat(@Nullable Optional<?> actual) {
     return assert_().that(actual);
   }
 
   /**
-   * An {@code AssertionError} that (a) always supports a cause, even under old versions of Android
-   * and (b) omits "java.lang.AssertionError:" from the beginning of its toString() representation.
+   * @since 1.3.0 (present in {@link Truth8} since before 1.0)
+   */
+  @SuppressWarnings("Java7ApiChecker") // no more dangerous than wherever the user got the Stream
+  public static OptionalIntSubject assertThat(@Nullable OptionalInt actual) {
+    return assert_().that(actual);
+  }
+
+  /**
+   * @since 1.4.0 (present in {@link Truth8} since before 1.0)
+   */
+  @SuppressWarnings("Java7ApiChecker") // no more dangerous than wherever the user got the Stream
+  public static OptionalLongSubject assertThat(@Nullable OptionalLong actual) {
+    return assert_().that(actual);
+  }
+
+  /**
+   * @since 1.4.0 (present in {@link Truth8} since before 1.0)
+   */
+  @SuppressWarnings("Java7ApiChecker") // no more dangerous than wherever the user got the Stream
+  public static OptionalDoubleSubject assertThat(@Nullable OptionalDouble actual) {
+    return assert_().that(actual);
+  }
+
+  /**
+   * @since 1.4.0 (present in {@link Truth8} since before 1.0)
+   */
+  @SuppressWarnings("Java7ApiChecker") // no more dangerous than wherever the user got the Stream
+  public static StreamSubject assertThat(@Nullable Stream<?> actual) {
+    return assert_().that(actual);
+  }
+
+  /**
+   * @since 1.4.0 (present in {@link Truth8} since before 1.0)
+   */
+  @SuppressWarnings("Java7ApiChecker") // no more dangerous than wherever the user got the Stream
+  public static IntStreamSubject assertThat(@Nullable IntStream actual) {
+    return assert_().that(actual);
+  }
+
+  /**
+   * @since 1.4.0 (present in {@link Truth8} since before 1.0)
+   */
+  @SuppressWarnings("Java7ApiChecker") // no more dangerous than wherever the user got the Stream
+  public static LongStreamSubject assertThat(@Nullable LongStream actual) {
+    return assert_().that(actual);
+  }
+
+  // TODO(b/64757353): Add support for DoubleStream?
+
+  /**
+   * @since 1.4.0 (present in {@link Truth8} since before 1.0)
+   */
+  @GwtIncompatible
+  @J2ObjCIncompatible
+  @J2ktIncompatible
+  public static PathSubject assertThat(@Nullable Path actual) {
+    return assert_().that(actual);
+  }
+
+  /**
+   * An {@code AssertionError} that omits "java.lang.AssertionError:" from the beginning of its
+   * toString() representation.
    */
   // TODO(cpovirk): Consider eliminating this, adding its functionality to AssertionErrorWithFacts?
   @SuppressWarnings("OverrideThrowableToString") // We intentionally replace the normal format.
   static final class SimpleAssertionError extends AssertionError {
-    /** Separate cause field, in case initCause() fails. */
-    private final @Nullable Throwable cause;
-
     private SimpleAssertionError(String message, @Nullable Throwable cause) {
-      super(checkNotNull(message));
-      this.cause = cause;
-
-      try {
-        initCause(cause);
-      } catch (IllegalStateException alreadyInitializedBecauseOfHarmonyBug) {
-        /*
-         * initCause() throws under old versions of Android:
-         * https://issuetracker.google.com/issues/36945167
-         *
-         * Yes, it's *nice* if initCause() works:
-         *
-         * - It ensures that, if someone tries to call initCause() later, the call will fail loudly
-         *   rather than be silently ignored.
-         *
-         * - It populates the usual `Throwable.cause` field, where users of debuggers and other
-         *   tools are likely to look first.
-         *
-         * But if it doesn't work, that's fine: Most consumers of the cause should be retrieving it
-         * through getCause(), which we've overridden to return *our* `cause` field, which we've
-         * populated with the correct value.
-         */
-      }
+      super(checkNotNull(message), cause);
     }
 
     static SimpleAssertionError create(String message, @Nullable Throwable cause) {
@@ -317,12 +370,6 @@ public final class Truth {
 
     static SimpleAssertionError createWithNoStack(String message) {
       return createWithNoStack(message, /* cause= */ null);
-    }
-
-    @Override
-    @SuppressWarnings("UnsynchronizedOverridesSynchronized")
-    public @Nullable Throwable getCause() {
-      return cause;
     }
 
     @Override
