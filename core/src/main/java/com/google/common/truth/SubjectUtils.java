@@ -15,6 +15,7 @@
  */
 package com.google.common.truth;
 
+import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Strings.lenientFormat;
 import static com.google.common.collect.Iterables.isEmpty;
 import static com.google.common.collect.Iterables.transform;
@@ -36,7 +37,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import org.checkerframework.checker.nullness.qual.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Utility methods used in {@code Subject} implementors.
@@ -341,7 +342,10 @@ final class SubjectUtils {
     return itemsWithTypeInfo;
   }
 
-  static <T extends @Nullable Object> Collection<T> iterableToCollection(Iterable<T> iterable) {
+  static <T extends @Nullable Object> Collection<T> iterableToCollection(
+      @Nullable Iterable<T> iterable) {
+    // TODO(cpovirk): For null inputs, produce a better exception message (ideally in callers).
+    checkNotNull(iterable);
     if (iterable instanceof Collection) {
       // Should be safe to assume that any Iterable implementing Collection isn't a one-shot
       // iterable, right? I sure hope so.
