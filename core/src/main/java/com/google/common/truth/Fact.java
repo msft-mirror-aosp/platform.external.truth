@@ -22,7 +22,7 @@ import static java.lang.Math.max;
 
 import com.google.common.collect.ImmutableList;
 import java.io.Serializable;
-import org.checkerframework.checker.nullness.qual.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /**
  * A string key-value pair in a failure message, such as "expected: abc" or "but was: xyz."

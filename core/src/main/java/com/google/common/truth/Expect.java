@@ -30,7 +30,7 @@ import com.google.common.truth.Truth.SimpleAssertionError;
 import com.google.errorprone.annotations.concurrent.GuardedBy;
 import java.util.ArrayList;
 import java.util.List;
-import org.checkerframework.checker.nullness.qual.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.junit.internal.AssumptionViolatedException;
 import org.junit.rules.ErrorCollector;
 import org.junit.rules.TestRule;
@@ -73,7 +73,7 @@ import org.junit.runners.model.Statement;
  *       by a method like {@code executor.submit(...)}. It might also include checking for
  *       unexpected log messages
  *       or reading metrics that count failures.) If your tests already check for exceptions from a
- *       thread, then that will any cover exception from plain {@code assertThat}.
+ *       thread, then that will cover any exception from plain {@code assertThat}.
  * </ul>
  *
  * <p>To record failures for the purpose of testing that an assertion fails when it should, see
