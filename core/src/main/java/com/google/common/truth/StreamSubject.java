@@ -25,7 +25,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Stream;
-import org.checkerframework.checker.nullness.qual.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Propositions for {@link Stream} subjects.
@@ -50,7 +50,7 @@ import org.checkerframework.checker.nullness.qual.Nullable;
 public final class StreamSubject extends Subject {
   // Storing the FailureMetadata instance is not usually advisable.
   private final FailureMetadata metadata;
-  private final Stream<?> actual;
+  private final @Nullable Stream<?> actual;
   private final Supplier<@Nullable List<?>> listSupplier;
 
   StreamSubject(
@@ -88,7 +88,18 @@ public final class StreamSubject extends Subject {
     return String.valueOf(asList);
   }
 
-  public static Subject.Factory<StreamSubject, Stream<?>> streams() {
+  /**
+   * Obsolete factory instance. This factory was previously necessary for assertions like {@code
+   * assertWithMessage(...).about(streams()).that(stream)....}. Now, you can perform assertions like
+   * that without the {@code about(...)} call.
+   *
+   * @deprecated Instead of {@code about(streams()).that(...)}, use just {@code that(...)}.
+   *     Similarly, instead of {@code assertAbout(streams()).that(...)}, use just {@code
+   *     assertThat(...)}.
+   */
+  @Deprecated
+  @SuppressWarnings("InlineMeSuggester") // We want users to remove the surrounding call entirely.
+  public static Factory<StreamSubject, Stream<?>> streams() {
     return StreamSubject::new;
   }
 
@@ -134,7 +145,7 @@ public final class StreamSubject extends Subject {
   }
 
   /** Fails if the subject does not contain at least one of the given elements. */
-  public void containsAnyIn(Iterable<?> expected) {
+  public void containsAnyIn(@Nullable Iterable<?> expected) {
     checkThatContentsList().containsAnyIn(expected);
   }
 
@@ -163,7 +174,7 @@ public final class StreamSubject extends Subject {
    * within the actual elements, but they are not required to be consecutive.
    */
   @CanIgnoreReturnValue
-  public Ordered containsAtLeastElementsIn(Iterable<?> expected) {
+  public Ordered containsAtLeastElementsIn(@Nullable Iterable<?> expected) {
     return checkThatContentsList().containsAtLeastElementsIn(expected);
   }
 
@@ -198,7 +209,7 @@ public final class StreamSubject extends Subject {
    * on the object returned by this method.
    */
   @CanIgnoreReturnValue
-  public Ordered containsExactlyElementsIn(Iterable<?> expected) {
+  public Ordered containsExactlyElementsIn(@Nullable Iterable<?> expected) {
     return checkThatContentsList().containsExactlyElementsIn(expected);
   }
 
@@ -215,7 +226,7 @@ public final class StreamSubject extends Subject {
    * Fails if the subject contains any of the given elements. (Duplicates are irrelevant to this
    * test, which fails if any of the actual elements equal any of the excluded.)
    */
-  public void containsNoneIn(Iterable<?> excluded) {
+  public void containsNoneIn(@Nullable Iterable<?> excluded) {
     checkThatContentsList().containsNoneIn(excluded);
   }
 

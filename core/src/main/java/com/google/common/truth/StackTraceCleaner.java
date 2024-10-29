@@ -27,7 +27,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Set;
-import org.checkerframework.checker.nullness.qual.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /** Utility that cleans stack traces to remove noise from common frameworks. */
 @GwtIncompatible
