@@ -17,10 +17,24 @@ package com.google.common.truth;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-import org.checkerframework.checker.nullness.qual.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Propositions for {@link Throwable} subjects.
+ *
+ * <p>Truth does not provide its own support for calling a method and automatically catching an
+ * expected exception, only for asserting on the exception after it has been caught. To catch the
+ * exception, we suggest {@link org.junit.Assert#assertThrows(Class,
+ * org.junit.function.ThrowingRunnable) assertThrows} (JUnit), <a
+ * href="https://kotlinlang.org/api/latest/kotlin.test/kotlin.test/assert-fails-with.html">{@code
+ * assertFailsWith}</a> ({@code kotlin.test}), or similar functionality from your testing library of
+ * choice.
+ *
+ * <pre>
+ * InvocationTargetException expected =
+ *     assertThrows(InvocationTargetException.class, () -> method.invoke(null));
+ * assertThat(expected).hasCauseThat().isInstanceOf(IOException.class);
+ * </pre>
  *
  * @author Kurt Alfred Kluever
  */

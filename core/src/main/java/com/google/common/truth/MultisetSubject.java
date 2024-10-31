@@ -19,7 +19,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import com.google.common.collect.Multiset;
-import org.checkerframework.checker.nullness.qual.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Propositions for {@link Multiset} subjects.
@@ -31,7 +31,7 @@ public final class MultisetSubject extends IterableSubject {
   private final @Nullable Multiset<?> actual;
 
   MultisetSubject(FailureMetadata metadata, @Nullable Multiset<?> multiset) {
-    super(metadata, multiset);
+    super(metadata, multiset, /* typeDescriptionOverride= */ "multiset");
     this.actual = multiset;
   }
 

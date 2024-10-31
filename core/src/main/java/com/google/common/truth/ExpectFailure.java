@@ -24,7 +24,7 @@ import static com.google.common.truth.TruthFailureSubject.truthFailures;
 import com.google.common.annotations.GwtIncompatible;
 import com.google.common.truth.Truth.SimpleAssertionError;
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
-import org.checkerframework.checker.nullness.qual.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.junit.runner.Description;
 import org.junit.runners.model.Statement;
 
