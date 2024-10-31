@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017 Google, Inc.
+ * Copyright (c) 2019 Google, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,19 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.google.common.truth;
 
-import static com.google.common.truth.Truth.assertThat;
+import static java.lang.annotation.ElementType.CONSTRUCTOR;
+import static java.lang.annotation.ElementType.METHOD;
+import static java.lang.annotation.ElementType.TYPE;
 
-import java.nio.file.Paths;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import java.lang.annotation.Target;
 
-@RunWith(JUnit4.class)
-public class PathSubjectTest {
-  @Test
-  public void basicEquality() {
-    assertThat(Paths.get("foo")).isEqualTo(Paths.get("foo"));
-  }
-}
+/**
+ * Disables Animal Sniffer's checking of compatibility with older versions of Java/Android.
+ */
+@Target({METHOD, CONSTRUCTOR, TYPE})
+@interface IgnoreJRERequirement {}

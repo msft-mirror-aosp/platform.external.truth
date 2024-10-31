@@ -49,7 +49,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import org.checkerframework.checker.nullness.qual.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Tool to differentiate two messages with the same {@link Descriptor}, subject to the rules set out
@@ -221,8 +221,10 @@ final class ProtoTruthMessageDifferencer {
     if (shouldCompareValue == FieldScopeResult.EXCLUDED_RECURSIVELY) {
       valueDiffResult = SingularField.ignored(name(AnyUtils.valueFieldDescriptor()));
     } else {
-      Optional<Message> unpackedActual = AnyUtils.unpack(actual, config);
-      Optional<Message> unpackedExpected = AnyUtils.unpack(expected, config);
+      Optional<Message> unpackedActual =
+          AnyUtils.unpack(actual, config.useTypeRegistry(), config.useExtensionRegistry());
+      Optional<Message> unpackedExpected =
+          AnyUtils.unpack(expected, config.useTypeRegistry(), config.useExtensionRegistry());
       if (unpackedActual.isPresent()
           && unpackedExpected.isPresent()
           && descriptorsMatch(unpackedActual.get(), unpackedExpected.get())) {
@@ -235,7 +237,10 @@ final class ProtoTruthMessageDifferencer {
                 shouldCompareValue == FieldScopeResult.EXCLUDED_NONRECURSIVELY,
                 AnyUtils.valueFieldDescriptor(),
                 name(AnyUtils.valueFieldDescriptor()),
-                config.subScope(rootDescriptor, AnyUtils.valueSubScopeId()));
+                config.subScope(
+                    rootDescriptor,
+                    SubScopeId.ofUnpackedAnyValueType(
+                        unpackedActual.get().getDescriptorForType())));
       } else {
         valueDiffResult =
             compareSingularValue(
@@ -959,7 +964,7 @@ final class ProtoTruthMessageDifferencer {
       FieldDescriptor fieldDescriptor, Object key, FieldDescriptor keyFieldDescriptor) {
     StringBuilder sb = new StringBuilder();
     try {
-      TextFormat.printFieldValue(keyFieldDescriptor, key, sb);
+      TextFormat.printer().printFieldValue(keyFieldDescriptor, key, sb);
     } catch (IOException impossible) {
       throw new AssertionError(impossible);
     }

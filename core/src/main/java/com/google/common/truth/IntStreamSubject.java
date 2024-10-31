@@ -15,6 +15,7 @@
  */
 package com.google.common.truth;
 
+import static com.google.common.base.Preconditions.checkNotNull;
 import static java.util.stream.Collectors.toCollection;
 
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
@@ -23,7 +24,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
-import org.checkerframework.checker.nullness.qual.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Propositions for {@link IntStream} subjects.
@@ -39,13 +40,18 @@ import org.checkerframework.checker.nullness.qual.Nullable;
  * stream before asserting on it.
  *
  * @author Kurt Alfred Kluever
+ * @since 1.3.0 (previously part of {@code truth-java8-extension})
  */
-@SuppressWarnings("deprecation") // TODO(b/134064106): design an alternative to no-arg check()
+@SuppressWarnings({
+  "deprecation", // TODO(b/134064106): design an alternative to no-arg check()
+  "Java7ApiChecker", // used only from APIs with Java 8 in their signatures
+})
+@IgnoreJRERequirement
 public final class IntStreamSubject extends Subject {
 
-  private final List<?> actualList;
+  private final @Nullable List<?> actualList;
 
-  private IntStreamSubject(FailureMetadata failureMetadata, @Nullable IntStream stream) {
+  IntStreamSubject(FailureMetadata failureMetadata, @Nullable IntStream stream) {
     super(failureMetadata, stream);
     this.actualList =
         (stream == null) ? null : stream.boxed().collect(toCollection(ArrayList::new));
@@ -56,6 +62,17 @@ public final class IntStreamSubject extends Subject {
     return String.valueOf(actualList);
   }
 
+  /**
+   * Obsolete factory instance. This factory was previously necessary for assertions like {@code
+   * assertWithMessage(...).about(intStreams()).that(stream)....}. Now, you can perform assertions
+   * like that without the {@code about(...)} call.
+   *
+   * @deprecated Instead of {@code about(intStreams()).that(...)}, use just {@code that(...)}.
+   *     Similarly, instead of {@code assertAbout(intStreams()).that(...)}, use just {@code
+   *     assertThat(...)}.
+   */
+  @Deprecated
+  @SuppressWarnings("InlineMeSuggester") // We want users to remove the surrounding call entirely.
   public static Factory<IntStreamSubject, IntStream> intStreams() {
     return IntStreamSubject::new;
   }
@@ -102,7 +119,7 @@ public final class IntStreamSubject extends Subject {
   }
 
   /** Fails if the subject does not contain at least one of the given elements. */
-  public void containsAnyIn(Iterable<?> expected) {
+  public void containsAnyIn(@Nullable Iterable<?> expected) {
     check().that(actualList).containsAnyIn(expected);
   }
 
@@ -131,7 +148,7 @@ public final class IntStreamSubject extends Subject {
    * within the actual elements, but they are not required to be consecutive.
    */
   @CanIgnoreReturnValue
-  public Ordered containsAtLeastElementsIn(Iterable<?> expected) {
+  public Ordered containsAtLeastElementsIn(@Nullable Iterable<?> expected) {
     return check().that(actualList).containsAtLeastElementsIn(expected);
   }
 
@@ -145,7 +162,19 @@ public final class IntStreamSubject extends Subject {
    * on the object returned by this method.
    */
   @CanIgnoreReturnValue
-  public Ordered containsExactly(int... varargs) {
+  public Ordered containsExactly(int @Nullable ... varargs) {
+    /*
+     * We declare a parameter type that lets callers pass a nullable array, even though the
+     * assertion will fail if the array is ever actually null. This can be convenient if the
+     * expected value comes from a nullable source (e.g., a map lookup): Users would otherwise have
+     * to use {@code requireNonNull} or {@code !!} or similar, all to address a compile error
+     * warning about a runtime failure that might never happen—a runtime failure that Truth could
+     * produce a better exception message for, since it could make the message express that the
+     * caller is performing a containsExactly assertion.
+     *
+     * TODO(cpovirk): Actually produce such a better exception message.
+     */
+    checkNotNull(varargs);
     return check().that(actualList).containsExactlyElementsIn(box(varargs));
   }
 
@@ -159,7 +188,7 @@ public final class IntStreamSubject extends Subject {
    * on the object returned by this method.
    */
   @CanIgnoreReturnValue
-  public Ordered containsExactlyElementsIn(Iterable<?> expected) {
+  public Ordered containsExactlyElementsIn(@Nullable Iterable<?> expected) {
     return check().that(actualList).containsExactlyElementsIn(expected);
   }
 
@@ -176,7 +205,7 @@ public final class IntStreamSubject extends Subject {
    * Fails if the subject contains any of the given elements. (Duplicates are irrelevant to this
    * test, which fails if any of the actual elements equal any of the excluded.)
    */
-  public void containsNoneIn(Iterable<?> excluded) {
+  public void containsNoneIn(@Nullable Iterable<?> excluded) {
     check().that(actualList).containsNoneIn(excluded);
   }
 

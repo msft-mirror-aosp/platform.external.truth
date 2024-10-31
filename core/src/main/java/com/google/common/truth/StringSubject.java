@@ -23,7 +23,7 @@ import static com.google.common.truth.Fact.simpleFact;
 import com.google.common.annotations.GwtIncompatible;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import org.checkerframework.checker.nullness.qual.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Propositions for string subjects.
@@ -127,6 +127,11 @@ public class StringSubject extends ComparableSubject<String> {
             fact("expected to match", regex),
             fact("but was", actual),
             simpleFact("Looks like you want to use .isEqualTo() for an exact equality assertion."));
+      } else if (Platform.containsMatch(actual, regex)) {
+        failWithoutActual(
+            fact("expected to match", regex),
+            fact("but was", actual),
+            simpleFact("Did you mean to call containsMatch() instead of match()?"));
       } else {
         failWithActual("expected to match", regex);
       }
@@ -135,7 +140,6 @@ public class StringSubject extends ComparableSubject<String> {
 
   /** Fails if the string does not match the given regex. */
   @GwtIncompatible("java.util.regex.Pattern")
-  @J2ktIncompatible
   public void matches(@Nullable Pattern regex) {
     checkNotNull(regex);
     if (actual == null) {
@@ -148,6 +152,11 @@ public class StringSubject extends ComparableSubject<String> {
             simpleFact(
                 "If you want an exact equality assertion you can escape your regex with"
                     + " Pattern.quote()."));
+      } else if (regex.matcher(actual).find()) {
+        failWithoutActual(
+            fact("expected to match", regex),
+            fact("but was", actual),
+            simpleFact("Did you mean to call containsMatch() instead of match()?"));
       } else {
         failWithActual("expected to match", regex);
       }
@@ -166,7 +175,6 @@ public class StringSubject extends ComparableSubject<String> {
 
   /** Fails if the string matches the given regex. */
   @GwtIncompatible("java.util.regex.Pattern")
-  @J2ktIncompatible
   public void doesNotMatch(@Nullable Pattern regex) {
     checkNotNull(regex);
     if (actual == null) {
@@ -178,7 +186,6 @@ public class StringSubject extends ComparableSubject<String> {
 
   /** Fails if the string does not contain a match on the given regex. */
   @GwtIncompatible("java.util.regex.Pattern")
-  @J2ktIncompatible
   public void containsMatch(@Nullable Pattern regex) {
     checkNotNull(regex);
     if (actual == null) {
@@ -200,7 +207,6 @@ public class StringSubject extends ComparableSubject<String> {
 
   /** Fails if the string contains a match on the given regex. */
   @GwtIncompatible("java.util.regex.Pattern")
-  @J2ktIncompatible
   public void doesNotContainMatch(@Nullable Pattern regex) {
     checkNotNull(regex);
     if (actual == null) {
