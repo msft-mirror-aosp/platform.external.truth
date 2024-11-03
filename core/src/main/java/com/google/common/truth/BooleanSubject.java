@@ -17,7 +17,7 @@ package com.google.common.truth;
 
 import static com.google.common.truth.Fact.simpleFact;
 
-import org.checkerframework.checker.nullness.qual.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Propositions for boolean subjects.
