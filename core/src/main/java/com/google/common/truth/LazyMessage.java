@@ -20,7 +20,7 @@ import static com.google.common.base.Strings.lenientFormat;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
-import org.checkerframework.checker.nullness.qual.Nullable;
+import org.jspecify.annotations.Nullable;
 
 final class LazyMessage {
   private final String format;
