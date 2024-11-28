@@ -19,7 +19,7 @@ import static com.google.common.truth.Fact.fact;
 import static com.google.common.truth.Fact.simpleFact;
 
 import java.util.OptionalInt;
-import org.checkerframework.checker.nullness.qual.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Propositions for Java 8 {@link OptionalInt} subjects.
@@ -30,7 +30,7 @@ import org.checkerframework.checker.nullness.qual.Nullable;
 @SuppressWarnings("Java7ApiChecker") // used only from APIs with Java 8 in their signatures
 @IgnoreJRERequirement
 public final class OptionalIntSubject extends Subject {
-  private final OptionalInt actual;
+  private final @Nullable OptionalInt actual;
 
   OptionalIntSubject(
       FailureMetadata failureMetadata,
@@ -74,7 +74,18 @@ public final class OptionalIntSubject extends Subject {
     }
   }
 
-  public static Subject.Factory<OptionalIntSubject, OptionalInt> optionalInts() {
+  /**
+   * Obsolete factory instance. This factory was previously necessary for assertions like {@code
+   * assertWithMessage(...).about(optionalInts()).that(optional)....}. Now, you can perform
+   * assertions like that without the {@code about(...)} call.
+   *
+   * @deprecated Instead of {@code about(optionalInts()).that(...)}, use just {@code that(...)}.
+   *     Similarly, instead of {@code assertAbout(optionalInts()).that(...)}, use just {@code
+   *     assertThat(...)}.
+   */
+  @Deprecated
+  @SuppressWarnings("InlineMeSuggester") // We want users to remove the surrounding call entirely.
+  public static Factory<OptionalIntSubject, OptionalInt> optionalInts() {
     return (metadata, subject) -> new OptionalIntSubject(metadata, subject, "optionalInt");
   }
 }
