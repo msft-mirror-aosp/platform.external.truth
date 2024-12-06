@@ -23,7 +23,8 @@ import com.google.common.collect.ImmutableList;
 import jsinterop.annotations.JsMethod;
 import jsinterop.annotations.JsProperty;
 import jsinterop.annotations.JsType;
-import org.checkerframework.checker.nullness.qual.Nullable;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 
 
 /**
@@ -32,6 +33,7 @@ import org.checkerframework.checker.nullness.qual.Nullable;
  *
  * @author Christian Gruber (cgruber@google.com)
  */
+@NullMarked
 final class Platform {
   private Platform() {}
 
@@ -58,7 +60,7 @@ final class Platform {
   }
 
   /**
-   * Returns an array containing all of the exceptions that were suppressed to deliver the given
+   * Returns an array containing all the exceptions that were suppressed to deliver the given
    * exception. Delegates to the getSuppressed() method on Throwable that is available in Java 1.7+
    */
   static Throwable[] getSuppressed(Throwable throwable) {
@@ -267,6 +269,10 @@ final class Platform {
 
   static boolean kotlinRangeContains(Iterable<?> haystack, @Nullable Object needle) {
     throw new AssertionError(); // never called under GWT because isKotlinRange returns false
+  }
+
+  static boolean classMetadataUnsupported() {
+    return String.class.getSuperclass() == null;
   }
 }
 
