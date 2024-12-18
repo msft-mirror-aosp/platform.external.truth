@@ -32,7 +32,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.List;
 import java.util.regex.Pattern;
-import org.checkerframework.checker.nullness.qual.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.junit.ComparisonFailure;
 import org.junit.rules.TestRule;
 
@@ -56,7 +56,7 @@ final class Platform {
   }
 
   /**
-   * Returns an array containing all of the exceptions that were suppressed to deliver the given
+   * Returns an array containing all the exceptions that were suppressed to deliver the given
    * exception. If suppressed exceptions are not supported (pre-Java 1.7), an empty array will be
    * returned.
    */
@@ -85,8 +85,6 @@ final class Platform {
    * the value passed to {@code assertThat} or {@code that}, as distinct from any later actual
    * values produced by chaining calls like {@code hasMessageThat}.
    */
-  // Checker complains that first invoke argument is null.
-  @SuppressWarnings("argument.type.incompatible")
   static @Nullable String inferDescription() {
     if (isInferDescriptionDisabled()) {
       return null;
@@ -167,31 +165,17 @@ final class Platform {
   abstract static class PlatformComparisonFailure extends ComparisonFailure {
     private final String message;
 
-    /** Separate cause field, in case initCause() fails. */
-    private final @Nullable Throwable cause;
-
     PlatformComparisonFailure(
         String message, String expected, String actual, @Nullable Throwable cause) {
       super(message, expected, actual);
       this.message = message;
-      this.cause = cause;
 
-      try {
-        initCause(cause);
-      } catch (IllegalStateException alreadyInitializedBecauseOfHarmonyBug) {
-        // See Truth.SimpleAssertionError.
-      }
+      initCause(cause);
     }
 
     @Override
     public final String getMessage() {
       return message;
-    }
-
-    @Override
-    @SuppressWarnings("UnsynchronizedOverridesSynchronized")
-    public final @Nullable Throwable getCause() {
-      return cause;
     }
 
     // To avoid printing the class name before the message.
@@ -364,4 +348,11 @@ final class Platform {
               throw newLinkageError(e);
             }
           });
+
+  static boolean classMetadataUnsupported() {
+    // https://github.com/google/truth/issues/198
+    // TODO(cpovirk): Consider whether to remove instanceof tests under GWT entirely.
+    // TODO(cpovirk): Run more Truth tests under GWT, and add tests for this.
+    return false;
+  }
 }
