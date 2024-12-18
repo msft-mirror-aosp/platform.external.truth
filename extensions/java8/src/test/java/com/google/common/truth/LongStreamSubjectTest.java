@@ -18,7 +18,7 @@ package com.google.common.truth;
 import static com.google.common.truth.FailureAssertions.assertFailureKeys;
 import static com.google.common.truth.FailureAssertions.assertFailureValue;
 import static com.google.common.truth.LongStreamSubject.longStreams;
-import static com.google.common.truth.Truth8.assertThat;
+import static com.google.common.truth.Truth.assertThat;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.fail;
 
@@ -37,6 +37,7 @@ import org.junit.runners.JUnit4;
 public final class LongStreamSubjectTest {
 
   @Test
+  @SuppressWarnings("TruthSelfEquals")
   public void testIsEqualTo() throws Exception {
     LongStream stream = LongStream.of(42);
     assertThat(stream).isEqualTo(stream);
@@ -66,6 +67,7 @@ public final class LongStreamSubjectTest {
   }
 
   @Test
+  @SuppressWarnings("TruthSelfEquals")
   public void testIsSameInstanceAs() throws Exception {
     LongStream stream = LongStream.of(1);
     assertThat(stream).isSameInstanceAs(stream);

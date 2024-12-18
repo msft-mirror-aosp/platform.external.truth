@@ -42,7 +42,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import org.checkerframework.checker.nullness.qual.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Propositions for {@link Map} subjects.
@@ -526,7 +526,7 @@ public class MapSubject extends Subject {
    *
    * @since 1.1
    */
-  public final <V> UsingCorrespondence<V, V> formattingDiffsUsing(
+  public final <V extends @Nullable Object> UsingCorrespondence<V, V> formattingDiffsUsing(
       DiffFormatter<? super V, ? super V> formatter) {
     return comparingValuesUsing(Correspondence.<V>equality().formattingDiffsUsing(formatter));
   }
@@ -638,7 +638,11 @@ public class MapSubject extends Subject {
               ImmutableList.<Fact>builder()
                   .add(fact("expected not to contain", immutableEntry(excludedKey, excludedValue)))
                   .addAll(correspondence.describeForMapValues())
-                  .add(fact("but contained", immutableEntry(excludedKey, actualValue)))
+                  .add(
+                      fact(
+                          "but contained",
+                          Maps.<@Nullable Object, @Nullable A>immutableEntry(
+                              excludedKey, actualValue)))
                   .add(fact("full map", actualCustomStringRepresentationForPackageMembersToCall()))
                   .addAll(exceptions.describeAsAdditionalInfo())
                   .build());
